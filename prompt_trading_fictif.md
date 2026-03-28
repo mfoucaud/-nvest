@@ -63,7 +63,12 @@ Attribue des points selon les signaux :
 - Volume de confirmation > 1.5x moyenne : **+15 pts**
 - Niveau de support horizontal proche : **+15 pts**
 
-> Ne passer un ordre que si l'indice de confiance est **≥ 55/100**.
+> **Objectif journalier : passer 1 à 2 ordres par jour.**
+> - Si des candidats atteignent **≥ 55/100** → passer les 1-2 meilleurs (priorité qualité).
+> - Si aucun n'atteint 55 mais que des candidats atteignent **≥ 45/100** → passer quand même le(s) 1-2 meilleur(s) (seuil dégradé acceptable).
+> - Si tous les candidats sont **< 45/100** → ne pas passer d'ordre ce jour (marché trop incertain) et documenter la raison dans le rapport.
+>
+> ⚠️ Il ne faut **pas** passer des ordres pour le principe : si rien ne vaut ≥ 45, on attend. Mais en dessous de cette exception, chercher activement 1-2 opportunités chaque jour est la règle.
 
 ---
 
@@ -109,7 +114,7 @@ Applique des bonus/malus au score de confiance technique :
 | Événement macro majeur dans les 48h (Fed, CPI...) | **−10 pts** |
 | Sentiment communautaire très baissier | **−10 pts** |
 
-> Le score final = score technique + ajustement actualité. Le seuil de passage d'ordre reste ≥ 55/100.
+> Le score final = score technique + ajustement actualité. Le seuil préféré reste ≥ 55/100, avec seuil dégradé à 45/100 si aucun candidat n'atteint 55 (voir règle d'objectif journalier ci-dessus).
 
 ---
 
@@ -297,8 +302,12 @@ Sauvegarde toutes les données dans **deux fichiers JSON** :
        → Rechercher l'actualité récente (WebSearch)
        → Rechercher le sentiment communauté (WebSearch)
        → Calculer le score final = technique + ajustements actualité
-7.  Passer de nouveaux ordres fictifs si score final ≥ 55
-       → Écrire le mémo de justification dans journal_decisions.json
+7.  Appliquer la règle d'objectif journalier (1-2 ordres/jour) :
+       a. Trier tous les candidats par score décroissant
+       b. Si le meilleur score ≥ 55 → passer les 1-2 meilleurs (score ≥ 55 de préférence)
+       c. Sinon, si le meilleur score ≥ 45 → passer le(s) 1-2 meilleur(s) (seuil dégradé)
+       d. Sinon (tout < 45) → ne passer aucun ordre, noter "AUCUN SIGNAL SUFFISANT" dans le rapport
+       → Pour chaque ordre passé : écrire le mémo de justification dans journal_decisions.json
 8.  Recalculer toutes les métriques de performance
 9.  Générer le dashboard HTML mis à jour
 10. Sauvegarder portfolio_fictif.json et journal_decisions.json
@@ -320,6 +329,8 @@ Sauvegarde toutes les données dans **deux fichiers JSON** :
 ✅ Trades gagnants (historique) : [N] ([Win Rate]%)
 ❌ Trades perdants (historique) : [N]
 ⏱️ Trades expirés : [N]
+
+🎯 OBJECTIF JOURNALIER : [X] nouvel(s) ordre(s) passé(s) aujourd'hui [✅ OK / ⚠️ seuil dégradé / ❌ aucun signal ≥ 45]
 
 🔎 NOUVEAUX SIGNAUX DÉTECTÉS :
   • [TICKER] — [Direction] — Confiance [X]/100
@@ -349,11 +360,12 @@ Tu peux ajuster ces valeurs selon tes préférences :
 |-----------|-------------------|-------------|
 | `capital_fictif` | 10 000 € | Capital de départ fictif |
 | `taille_trade` | 1 000 € | Montant fictif par ordre |
-| `seuil_confiance` | 55/100 | Score minimum pour passer un ordre |
+| `seuil_confiance_ideal` | 55/100 | Score préféré pour passer un ordre |
+| `seuil_confiance_min` | 45/100 | Seuil dégradé si aucun candidat ≥ 55 (objectif 1-2 ordres/jour) |
 | `multiplicateur_sl` | 1.5 × ATR | Distance du stop loss |
 | `multiplicateur_tp` | 2.5 × ATR | Distance du take profit |
 | `duree_max_jours` | 5 jours | Durée max avant expiration |
-| `max_positions_ouvertes` | 5 | Nombre max de trades simultanés |
+| `max_positions_ouvertes` | 20 | Nombre max de trades simultanés |
 
 ---
 
