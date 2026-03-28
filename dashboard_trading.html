@@ -2,525 +2,291 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>📈 Dashboard Trading Fictif — 23 mars 2026</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<title>!nvest Dashboard - 2026-03-28</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
   :root {
-    --bg: #0f1117;
-    --bg2: #1a1d27;
-    --bg3: #22263a;
-    --accent: #6c63ff;
-    --accent2: #00d4aa;
-    --green: #00c48c;
-    --red: #ff4d6d;
-    --yellow: #ffd166;
-    --text: #e2e8f0;
-    --text2: #94a3b8;
-    --border: #2d3748;
-    --card-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    --bg: #0d1117; --card: #161b22; --border: #30363d;
+    --text: #c9d1d9; --muted: #8b949e;
+    --green: #3fb950; --red: #f85149; --yellow: #d29922;
+    --blue: #58a6ff; --purple: #bc8cff;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; }
-  .header {
-    background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%);
-    border-bottom: 1px solid var(--border);
-    padding: 20px 32px;
-    display: flex; justify-content: space-between; align-items: center;
-  }
-  .header h1 { font-size: 22px; font-weight: 700; }
-  .header h1 span { color: var(--accent2); }
-  .header .badge {
-    background: var(--bg3); border: 1px solid var(--border);
-    border-radius: 8px; padding: 6px 14px; font-size: 12px; color: var(--text2);
-  }
-  .header .badge b { color: var(--yellow); }
-  .disclaimer {
-    background: #2a1a3a; border-left: 3px solid var(--accent);
-    padding: 10px 20px; font-size: 12px; color: #b088cc; text-align: center;
-  }
-  .alert-bar {
-    background: linear-gradient(90deg, #1a2e1a 0%, #1a1d27 100%);
-    border-left: 3px solid var(--green);
-    padding: 10px 20px; font-size: 12px; color: #6eecd9; text-align: center;
-  }
-  .container { max-width: 1400px; margin: 0 auto; padding: 24px 32px; }
-  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
-  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; }
-  .card {
-    background: var(--bg2); border: 1px solid var(--border);
-    border-radius: 12px; padding: 20px;
-    box-shadow: var(--card-shadow);
-  }
-  .card-title { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text2); margin-bottom: 8px; font-weight: 600; }
-  .card-value { font-size: 28px; font-weight: 700; }
-  .card-sub { font-size: 12px; color: var(--text2); margin-top: 4px; }
-  .positive { color: var(--green); }
-  .negative { color: var(--red); }
-  .neutral { color: var(--yellow); }
-  .accent { color: var(--accent2); }
-  .section-header { display: flex; align-items: center; gap: 10px; margin: 28px 0 16px; font-size: 16px; font-weight: 700; }
-  .section-header::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-  .table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
-  table { width: 100%; border-collapse: collapse; }
-  thead th { background: var(--bg3); padding: 10px 14px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text2); white-space: nowrap; }
-  tbody td { padding: 10px 14px; border-top: 1px solid var(--border); white-space: nowrap; font-size: 13px; }
-  tbody tr:hover { background: rgba(108,99,255,0.06); }
-  .badge-ouvert { background: rgba(0,212,170,0.12); color: var(--accent2); border-radius: 6px; padding: 2px 10px; font-size: 11px; font-weight: 600; }
-  .badge-alerte { background: rgba(255,209,102,0.12); color: var(--yellow); border-radius: 6px; padding: 2px 10px; font-size: 11px; font-weight: 600; }
-  .badge-gagnant { background: rgba(0,196,140,0.12); color: var(--green); border-radius: 6px; padding: 2px 10px; font-size: 11px; font-weight: 600; }
-  .badge-perdant { background: rgba(255,77,109,0.12); color: var(--red); border-radius: 6px; padding: 2px 10px; font-size: 11px; font-weight: 600; }
-  .progress-bar-wrap { background: var(--bg3); border-radius: 4px; height: 6px; margin-top: 6px; }
-  .progress-bar { height: 6px; border-radius: 4px; }
-  .signal-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
-  .signal-card:hover { border-color: var(--accent); }
-  .ticker { font-size: 18px; font-weight: 800; }
-  .direction-badge { display: inline-block; border-radius: 6px; padding: 3px 12px; font-size: 11px; font-weight: 700; margin-left: 8px; }
-  .achat { background: rgba(0,196,140,0.15); color: var(--green); }
-  .vente { background: rgba(255,77,109,0.15); color: var(--red); }
-  .macro-box { background: linear-gradient(135deg, #1e2240 0%, #1a1d27 100%); border: 1px solid rgba(108,99,255,0.3); border-radius: 12px; padding: 20px; }
-  .macro-box h3 { color: var(--accent); margin-bottom: 12px; font-size: 14px; }
-  .macro-tag { display: inline-block; background: var(--bg3); border-radius: 6px; padding: 4px 10px; margin: 4px; font-size: 11px; border: 1px solid var(--border); }
-  .macro-tag.warning { border-color: rgba(255,77,109,0.4); color: #ff9eb5; }
-  .macro-tag.ok { border-color: rgba(0,196,140,0.4); color: #6eecd9; }
-  .macro-tag.neutral-t { border-color: rgba(255,209,102,0.4); color: var(--yellow); }
-  .macro-tag.big-news { border-color: rgba(108,99,255,0.6); color: #b8b0ff; background: rgba(108,99,255,0.1); font-weight: 700; }
-  .chart-container { position: relative; height: 260px; }
-  .chart-container-sm { position: relative; height: 200px; }
-  .score-pill { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; flex-shrink: 0; }
-  .score-high { background: rgba(0,196,140,0.15); color: var(--green); border: 2px solid rgba(0,196,140,0.5); }
-  .score-med { background: rgba(255,209,102,0.15); color: var(--yellow); border: 2px solid rgba(255,209,102,0.5); }
-  .score-low { background: rgba(255,77,109,0.15); color: var(--red); border: 2px solid rgba(255,77,109,0.5); }
-  .alerte-row { background: rgba(255,209,102,0.04) !important; }
-  footer { text-align: center; padding: 24px; color: var(--text2); font-size: 11px; border-top: 1px solid var(--border); margin-top: 32px; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; padding: 24px; }
+  h1 { font-size: 1.5rem; margin-bottom: 4px; }
+  .subtitle { color: var(--muted); font-size: .85rem; margin-bottom: 24px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  .card .label { font-size: .75rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  .card .value { font-size: 1.5rem; font-weight: 700; margin-top: 4px; }
+  .card .value.pos { color: var(--green); }
+  .card .value.neg { color: var(--red); }
+  .card .value.neutral { color: var(--blue); }
+  .section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+  .section h2 { font-size: 1rem; margin-bottom: 14px; color: var(--blue); }
+  table { width: 100%; border-collapse: collapse; font-size: .83rem; }
+  th { text-align: left; color: var(--muted); font-weight: 500; padding: 6px 10px; border-bottom: 1px solid var(--border); }
+  td { padding: 7px 10px; border-bottom: 1px solid #21262d; }
+  tr:last-child td { border-bottom: none; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: .75rem; font-weight: 600; }
+  .badge.ouvert    { background: #1f6feb33; color: var(--blue); }
+  .badge.gagnant   { background: #3fb95033; color: var(--green); }
+  .badge.perdant   { background: #f8514933; color: var(--red); }
+  .badge.expire    { background: #d2992233; color: var(--yellow); }
+  .badge.degrade   { background: #bc8cff33; color: var(--purple); }
+  .pos { color: var(--green); }
+  .neg { color: var(--red); }
+  .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .chart-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  .chart-wrap h2 { font-size: .9rem; color: var(--blue); margin-bottom: 12px; }
+  .conf-bar { display: flex; align-items: center; gap: 8px; margin: 4px 0; font-size: .8rem; }
+  .conf-bar .name { width: 90px; color: var(--muted); }
+  .conf-bar .bar-wrap { flex: 1; background: #21262d; border-radius: 4px; height: 8px; }
+  .conf-bar .bar { height: 8px; border-radius: 4px; }
+  .conf-bar .score { width: 36px; text-align: right; }
+  .alert { background: #d2992222; border: 1px solid var(--yellow); border-radius: 6px; padding: 8px 12px; margin: 8px 0; font-size: .8rem; color: var(--yellow); }
+  @media (max-width: 768px) { .charts { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
 
-<div class="header">
-  <h1>📈 Trading Fictif <span>Swing Dashboard</span></h1>
-  <div class="badge">🗓️ <b>23 mars 2026</b> — Mise à jour automatique quotidienne</div>
-</div>
-<div class="alert-bar">
-  🕊️ <b>ÉVÉNEMENT MAJEUR DU JOUR :</b> Trump annonce une pause de 5 jours des frappes iraniennes → Marchés en rally violent (S&P +1.6%, Dow +861 pts, Nasdaq +1.8%) | Pétrole en forte baisse | Sentiment risk-ON
-</div>
-<div class="disclaimer">
-  ⚠️ <b>SIMULATION UNIQUEMENT</b> — Tous les ordres sont purement fictifs et à but éducatif. Aucun ordre réel n'est passé. Données via Yahoo Finance &amp; WebSearch.
-</div>
+<h1>!nvest — Trading Fictif Dashboard</h1>
+<p class="subtitle">Rapport du 2026-03-28 &bull; Capital fictif &bull; Swing 2-5 jours</p>
 
-<div class="container">
-
-  <!-- KPIs -->
-  <div class="section-header">💰 Résumé du Portefeuille Fictif</div>
-  <div class="grid-4">
-    <div class="card">
-      <div class="card-title">Capital Actuel</div>
-      <div class="card-value negative">€9,947.62</div>
-      <div class="card-sub negative">▼ -0.52% (base: €10,000)</div>
-      <div class="progress-bar-wrap"><div class="progress-bar" style="width:99.48%;background:var(--red)"></div></div>
-    </div>
-    <div class="card">
-      <div class="card-title">P&amp;L Latent (positions ouvertes)</div>
-      <div class="card-value negative">-€52.38</div>
-      <div class="card-sub">NVDA: -€31.18 | TSLA: -€26.47 | ETH: +€5.27<br>AAPL: €0 [NV] | MSFT: €0 [NV]</div>
-    </div>
-    <div class="card">
-      <div class="card-title">P&amp;L Réalisé</div>
-      <div class="card-value neutral">€0.00</div>
-      <div class="card-sub">Aucun trade clôturé</div>
-    </div>
-    <div class="card">
-      <div class="card-title">Trades Ouverts / Total</div>
-      <div class="card-value accent">5 / 5</div>
-      <div class="card-sub">+2 nouveaux ordres aujourd'hui | Max: 5/5</div>
-    </div>
+<!-- KPIs -->
+<div class="grid">
+  <div class="card">
+    <div class="label">Capital actuel</div>
+    <div class="value neutral">9,806.76 EUR</div>
   </div>
-
-  <!-- Charts Row 1 -->
-  <div class="grid-2" style="margin-top:20px;">
-    <div class="card">
-      <div class="card-title">📈 Évolution du Capital Fictif</div>
-      <div class="chart-container">
-        <canvas id="capitalChart"></canvas>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">🥧 Répartition par Classe d'Actif (capital engagé)</div>
-      <div class="chart-container">
-        <canvas id="assetChart"></canvas>
-      </div>
-    </div>
+  <div class="card">
+    <div class="label">Capital + latent</div>
+    <div class="value neg">9,762.85 EUR</div>
   </div>
-
-  <!-- Positions ouvertes -->
-  <div class="section-header">📊 Positions Actuellement Ouvertes (5)</div>
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>ID</th><th>Actif</th><th>Classe</th><th>Direction</th>
-          <th>Entrée</th><th>Cours Actuel</th><th>Stop Loss</th><th>Take Profit</th>
-          <th>P&amp;L Latent</th><th>R/R</th><th>Conf.</th><th>Durée</th><th>Expiration</th><th>Statut</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><b>ORD-001</b></td>
-          <td><b>NVDA</b></td><td>Action 🇺🇸</td>
-          <td><span class="direction-badge achat">▲ ACHAT</span></td>
-          <td>$182.00</td>
-          <td class="negative"><b>$176.32</b></td>
-          <td class="negative">$169.25</td>
-          <td class="positive">$203.25</td>
-          <td class="negative"><b>-€31.18</b></td>
-          <td>1.67</td>
-          <td><span style="font-weight:800;color:var(--accent2);">85/100</span></td>
-          <td>2j</td><td>28/03</td>
-          <td><span class="badge-ouvert">OUVERT</span></td>
-        </tr>
-        <tr class="alerte-row">
-          <td><b>ORD-002</b></td>
-          <td><b>TSLA</b> ⚠️</td><td>Action 🇺🇸</td>
-          <td><span class="direction-badge achat">▲ ACHAT</span></td>
-          <td>$367.73</td>
-          <td class="negative"><b>$358.00</b></td>
-          <td class="negative">$348.23</td>
-          <td class="positive">$400.23</td>
-          <td class="negative"><b>-€26.47</b></td>
-          <td>1.67</td>
-          <td><span style="font-weight:800;color:var(--yellow);">80/100</span></td>
-          <td>2j</td><td>28/03</td>
-          <td><span class="badge-alerte">⚠️ SURVEILLER</span></td>
-        </tr>
-        <tr style="background:rgba(108,99,255,0.05);">
-          <td><b>ORD-003</b></td>
-          <td><b>ETH-USD</b> ⭐</td><td>Crypto ₿</td>
-          <td><span class="direction-badge achat">▲ ACHAT</span></td>
-          <td>$2,089.00</td>
-          <td class="positive"><b>$2,100.00</b></td>
-          <td class="negative">$1,939.00</td>
-          <td class="positive">$2,339.00</td>
-          <td class="positive"><b>+€5.27</b></td>
-          <td>1.67</td>
-          <td><span style="font-weight:800;color:var(--accent2);">85/100</span></td>
-          <td>1j</td><td>29/03</td>
-          <td><span class="badge-ouvert">OUVERT</span></td>
-        </tr>
-        <tr style="background:rgba(0,196,140,0.03);">
-          <td><b>ORD-004</b> 🆕</td>
-          <td><b>AAPL</b></td><td>Action 🇺🇸</td>
-          <td><span class="direction-badge achat">▲ ACHAT</span></td>
-          <td>$252.00</td>
-          <td><b>$252.00</b></td>
-          <td class="negative">$238.50</td>
-          <td class="positive">$274.50</td>
-          <td class="neutral"><b>€0.00</b></td>
-          <td>1.67</td>
-          <td><span style="font-weight:800;color:var(--yellow);">65/100</span></td>
-          <td>0j</td><td>30/03</td>
-          <td><span class="badge-ouvert">OUVERT</span></td>
-        </tr>
-        <tr style="background:rgba(0,196,140,0.03);">
-          <td><b>ORD-005</b> 🆕</td>
-          <td><b>MSFT</b></td><td>Action 🇺🇸</td>
-          <td><span class="direction-badge achat">▲ ACHAT</span></td>
-          <td>$383.00</td>
-          <td><b>$383.00</b></td>
-          <td class="negative">$362.00</td>
-          <td class="positive">$418.00</td>
-          <td class="neutral"><b>€0.00</b></td>
-          <td>1.67</td>
-          <td><span style="font-weight:800;color:var(--yellow);">65/100</span></td>
-          <td>0j</td><td>30/03</td>
-          <td><span class="badge-ouvert">OUVERT</span></td>
-        </tr>
-      </tbody>
-    </table>
+  <div class="card">
+    <div class="label">PnL total</div>
+    <div class="value neg">-2.37%</div>
   </div>
-  <div style="margin-top:10px;padding:10px 14px;background:rgba(255,209,102,0.06);border-radius:8px;border:1px solid rgba(255,209,102,0.2);font-size:12px;color:var(--yellow);">
-    ⚠️ <b>Alerte TSLA (ORD-002) :</b> NHTSA escalade la probe FSD en "Engineering Analysis" sur 3.2M véhicules (pré-recall). RSI (~30) en survente. Support SL $348.23 à ~$10 du cours actuel ($358). Surveiller attentivement.
+  <div class="card">
+    <div class="label">PnL realise</div>
+    <div class="value neg">-140.86 EUR</div>
   </div>
-
-  <!-- Historique -->
-  <div class="section-header">📁 Historique des Ordres Clôturés (0)</div>
-  <div class="card" style="text-align:center;padding:40px;color:var(--text2);">
-    <div style="font-size:36px;margin-bottom:12px;">📭</div>
-    <div>Aucun ordre clôturé pour l'instant.</div>
-    <div style="margin-top:8px;font-size:12px;">Les ordres <b>ORD-001</b> et <b>ORD-002</b> expirent le <b>28 mars 2026</b>.</div>
+  <div class="card">
+    <div class="label">Win Rate</div>
+    <div class="value neutral">0.0%</div>
   </div>
-
-  <!-- Charts Row 2 -->
-  <div class="grid-2" style="margin-top:28px;">
-    <div class="card">
-      <div class="card-title">📊 Scores de Confiance par Ordre</div>
-      <div class="chart-container-sm">
-        <canvas id="confidenceChart"></canvas>
-      </div>
-    </div>
-    <div class="macro-box">
-      <h3>🌍 Contexte Macro — 23 mars 2026</h3>
-      <p style="font-size:13px;line-height:1.7;color:var(--text2);margin-bottom:14px;">
-        <b style="color:var(--green)">PIVOT DU JOUR :</b> Trump annonce une <b>pause de 5 jours des frappes sur les infrastructures iraniennes</b>, citant des "conversations très productives". Le Dow a bondi de <b>+861 pts</b>, le Nasdaq de <b>+1.8%</b>, le pétrole a chuté fortement (Brent ~$108 → repli). Ce retournement géopolitique constitue le catalyseur macro le plus important depuis l'escalade du 28 février.
-        <br><br>Par ailleurs : <b>Fed maintient ses taux</b> (Powell: "pas de baisse sans progrès économiques"), BCE attentiste. Brent autour de $108 avec pointes à $118 cette semaine avant la pause. <b style="color:var(--accent2)">SEC : ETH = "digital commodity"</b> (20/03) — structurellement haussier.
-      </p>
-      <div>
-        <span class="macro-tag big-news">🕊️ Trump: Pause frappes Iran 5j</span>
-        <span class="macro-tag ok">✅ S&P +1.6% | Nasdaq +1.8%</span>
-        <span class="macro-tag ok">✅ Pétrole en baisse (risk-off → risk-on)</span>
-        <span class="macro-tag ok">✅ SEC: ETH = commodity (20/03)</span>
-        <span class="macro-tag ok">✅ NVDA: partenariats énergie + BioNeMo (CERAWeek)</span>
-        <span class="macro-tag warning">⚠️ NHTSA TSLA FSD probe → Engineering Analysis</span>
-        <span class="macro-tag warning">⚠️ Pause Iran = temporaire (5j seulement)</span>
-        <span class="macro-tag neutral-t">📊 Fed: taux stables, Powell prudent</span>
-        <span class="macro-tag neutral-t">📊 BCE: attentiste</span>
-        <span class="macro-tag ok">✅ Tesla: approbation FSD supervisé Europe en cours</span>
-      </div>
-    </div>
+  <div class="card">
+    <div class="label">Trades ouverts</div>
+    <div class="value neutral">4</div>
   </div>
-
-  <!-- Signaux détectés -->
-  <div class="section-header">🔎 Signaux Détectés Aujourd'hui — Scan de 31 actifs</div>
-  <div class="grid-3">
-
-    <div class="signal-card" style="border-color:rgba(0,196,140,0.4);">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-        <div><span class="ticker">AAPL</span><span class="direction-badge achat">▲ ACHAT</span></div>
-        <div class="score-pill score-med">65</div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
-        <div style="background:var(--bg3);border-radius:8px;padding:8px;text-align:center;">
-          <div style="font-size:10px;color:var(--text2);">Entrée</div>
-          <div style="font-weight:700;">$252</div>
-        </div>
-        <div style="background:var(--bg3);border-radius:8px;padding:8px;text-align:center;">
-          <div style="font-size:10px;color:var(--red);">Stop Loss</div>
-          <div style="font-weight:700;color:var(--red);">$238.50</div>
-        </div>
-        <div style="background:var(--bg3);border-radius:8px;padding:8px;text-align:center;">
-          <div style="font-size:10px;color:var(--green);">Take Profit</div>
-          <div style="font-weight:700;color:var(--green);">$274.50</div>
-        </div>
-      </div>
-      <div style="font-size:12px;margin-bottom:8px;line-height:1.5;">
-        <b>Tech:</b> RSI 22.1 (survente extrême historique), rebond sur support $246 + bande Bollinger inférieure. Death cross EMA limite le score.
-      </div>
-      <div style="font-size:12px;color:#6eecd9;margin-bottom:4px;">📰 <b>Actualité:</b> Trump de-escalation Iran → rally marché +1.9%, Wedbush cible $350 maintenu</div>
-      <div style="font-size:12px;color:var(--accent);margin-bottom:4px;">💬 <b>Sentiment:</b> HAUSSIER (context risk-on) | RSI 22.1 = plancher statistique rare</div>
-      <div style="background:rgba(255,77,109,0.08);border-radius:6px;padding:6px 10px;font-size:11px;color:var(--text2);">⚠️ MACD encore baissier | Death cross EMA | Falling knife possible</div>
-      <div style="margin-top:10px;font-size:12px;font-weight:700;color:var(--green);">✅ ORDRE PASSÉ — ORD-004 | €1,000 fictif | ATR: $9.00</div>
-    </div>
-
-    <div class="signal-card" style="border-color:rgba(0,196,140,0.4);">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-        <div><span class="ticker">MSFT</span><span class="direction-badge achat">▲ ACHAT</span></div>
-        <div class="score-pill score-med">65</div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
-        <div style="background:var(--bg3);border-radius:8px;padding:8px;text-align:center;">
-          <div style="font-size:10px;color:var(--text2);">Entrée</div>
-          <div style="font-weight:700;">$383</div>
-        </div>
-        <div style="background:var(--bg3);border-radius:8px;padding:8px;text-align:center;">
-          <div style="font-size:10px;color:var(--red);">Stop Loss</div>
-          <div style="font-weight:700;color:var(--red);">$362.00</div>
-        </div>
-        <div style="background:var(--bg3);border-radius:8px;padding:8px;text-align:center;">
-          <div style="font-size:10px;color:var(--green);">Take Profit</div>
-          <div style="font-weight:700;color:var(--green);">$418.00</div>
-        </div>
-      </div>
-      <div style="font-size:12px;margin-bottom:8px;line-height:1.5;">
-        <b>Tech:</b> Double bottom confirmé sur $380 (support testé 2×), RSI + Williams %R + Stochastics pivotent simultanément depuis survente — signal multi-oscillateurs rare.
-      </div>
-      <div style="font-size:12px;color:#6eecd9;margin-bottom:4px;">📰 <b>Actualité:</b> Rally marché Iran de-escalation. Pas d'actualité négative MSFT. Q3 résultats fin avril (hors fenêtre).</div>
-      <div style="font-size:12px;color:var(--accent);margin-bottom:4px;">💬 <b>Sentiment:</b> HAUSSIER (technique) — double bottom $380 identifié par communauté traders</div>
-      <div style="background:rgba(255,77,109,0.08);border-radius:6px;padding:6px 10px;font-size:11px;color:var(--text2);">⚠️ MACD sous signal | Death cross EMA50 < EMA200 | Pause Iran temporaire (5j)</div>
-      <div style="margin-top:10px;font-size:12px;font-weight:700;color:var(--green);">✅ ORDRE PASSÉ — ORD-005 | €1,000 fictif | ATR: $14.00</div>
-    </div>
-
-    <div class="signal-card">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-        <div><span class="ticker">SOL-USD</span><span class="direction-badge achat" style="opacity:0.7;">▲ ACHAT</span></div>
-        <div class="score-pill score-med">65</div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
-        <div style="background:var(--bg3);border-radius:8px;padding:8px;text-align:center;">
-          <div style="font-size:10px;color:var(--text2);">Prix actuel</div>
-          <div style="font-weight:700;">$86.65</div>
-        </div>
-        <div style="background:var(--bg3);border-radius:8px;padding:8px;text-align:center;">
-          <div style="font-size:10px;color:var(--text2);">RSI(14)</div>
-          <div style="font-weight:700;color:var(--yellow);">46.4</div>
-        </div>
-      </div>
-      <div style="font-size:12px;margin-bottom:6px;line-height:1.5;">50j MA + 200j MA en hausse depuis 18/03, higher lows, volume $2.6B/24h. MACD légèrement sous signal — momentum encore incertain.</div>
-      <div style="font-size:12px;color:#6eecd9;margin-bottom:4px;">📰 Alpenglow upgrade (150ms finality) + ETF inflows $900M en 2026. Risk-on Trump news favorable.</div>
-      <div style="background:rgba(255,209,102,0.08);border-radius:6px;padding:6px 10px;font-size:11px;color:var(--yellow);">⏸️ SIGNAL QUALIFIÉ (65/100) — <b>NON EXÉCUTÉ</b> — Portefeuille plein (5/5 positions max)</div>
-    </div>
-
+  <div class="card">
+    <div class="label">Gagnants / Perdants</div>
+    <div class="value neutral"><span class="pos">0</span> / <span class="neg">2</span></div>
   </div>
-
-  <!-- Signaux sous seuil -->
-  <div class="section-header" style="margin-top:24px;">📉 Actifs Sous Surveillance (score insuffisant)</div>
-  <div class="grid-3">
-
-    <div class="signal-card">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-        <div><span class="ticker">BTC-USD</span><span class="direction-badge achat" style="opacity:0.4;">▲ ACHAT</span></div>
-        <div class="score-pill score-low">35</div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
-        <div style="background:var(--bg3);border-radius:8px;padding:8px;text-align:center;">
-          <div style="font-size:10px;color:var(--text2);">Prix actuel</div>
-          <div style="font-weight:700;">$68,859</div>
-        </div>
-        <div style="background:var(--bg3);border-radius:8px;padding:8px;text-align:center;">
-          <div style="font-size:10px;color:var(--text2);">RSI(14)</div>
-          <div style="font-weight:700;color:var(--yellow);">46.3</div>
-        </div>
-      </div>
-      <div style="font-size:12px;margin-bottom:6px;line-height:1.5;">MACD convergent à -128.67 (baissier), 0 Buy / 12 Sell signals (indicateurs MA). Support $66,700. Résistance $74,000.</div>
-      <div style="margin-top:10px;font-size:12px;font-weight:700;color:var(--red);">⏳ SOUS LE SEUIL (35/55) — Pas d'ordre | Tendance "Strong Sell"</div>
-    </div>
-
-    <div class="signal-card">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-        <div><span class="ticker">TSLA</span><span style="font-size:11px;color:var(--yellow);margin-left:8px;">⚠️ Pos. existante</span></div>
-        <div class="score-pill score-low">30</div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
-        <div style="background:var(--bg3);border-radius:8px;padding:8px;text-align:center;">
-          <div style="font-size:10px;color:var(--text2);">Prix actuel</div>
-          <div style="font-weight:700;color:var(--red);">$358.00</div>
-        </div>
-        <div style="background:var(--bg3);border-radius:8px;padding:8px;text-align:center;">
-          <div style="font-size:10px;color:var(--text2);">RSI(14)</div>
-          <div style="font-weight:700;color:var(--yellow);">~30</div>
-        </div>
-      </div>
-      <div style="font-size:12px;margin-bottom:6px;line-height:1.5;">RSI ~30 (survente), mais MACD baissier. NHTSA probe escaladée → Engineering Analysis (pré-recall 3.2M véhicules). UBS révise les livraisons Q1 à la baisse.</div>
-      <div style="margin-top:10px;font-size:12px;font-weight:700;color:var(--yellow);">⚠️ Déjà en portefeuille (ORD-002) — SL $348.23 à surveiller</div>
-    </div>
-
-    <div class="signal-card">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-        <div><span class="ticker">META</span><span class="direction-badge achat" style="opacity:0.4;">▲ ACHAT</span></div>
-        <div class="score-pill score-low">40</div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
-        <div style="background:var(--bg3);border-radius:8px;padding:8px;text-align:center;">
-          <div style="font-size:10px;color:var(--text2);">RSI(14)</div>
-          <div style="font-weight:700;color:var(--yellow);">41.8</div>
-        </div>
-        <div style="background:var(--bg3);border-radius:8px;padding:8px;text-align:center;">
-          <div style="font-size:10px;color:var(--text2);">Signal</div>
-          <div style="font-weight:700;color:var(--red);">Neutre/Bear</div>
-        </div>
-      </div>
-      <div style="font-size:12px;margin-bottom:6px;line-height:1.5;">RSI 41.8 (neutre), MACD sous signal. Aucun signal d'entrée technique suffisant identifié. Rebond possible avec risk-on mais pas de setup clair.</div>
-      <div style="margin-top:10px;font-size:12px;font-weight:700;color:var(--yellow);">⏳ SOUS LE SEUIL (40/55) — À surveiller demain</div>
-    </div>
-
+  <div class="card">
+    <div class="label">Expires</div>
+    <div class="value neutral">1</div>
   </div>
-
 </div>
 
-<footer>
-  📁 Fichiers mis à jour: <b>dashboard_trading.html</b> · <b>portfolio_fictif.json</b> · <b>journal_decisions.json</b> (5 décisions enregistrées) &nbsp;|&nbsp;
-  ⚠️ Usage éducatif uniquement — Données Yahoo Finance &amp; WebSearch — aucun ordre réel &nbsp;|&nbsp;
-  🔄 Prochaine mise à jour automatique: <b>24/03/2026</b>
-</footer>
+<!-- Positions ouvertes -->
+<div class="section">
+  <h2>Positions Ouvertes (4)</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th><th>Actif</th><th>Direction</th><th>Entree</th>
+        <th>Stop Loss</th><th>Take Profit</th><th>Prix actuel</th>
+        <th>PnL latent</th><th>Confiance</th><th>Expiration</th><th>Statut</th>
+      </tr>
+    </thead>
+    <tbody>
 
+      <tr>
+        <td>ORD-003</td>
+        <td><strong>ETH-USD</strong></td>
+        <td>ACHAT</td>
+        <td>2089.0 USD</td>
+        <td class="neg">1939.0 USD</td>
+        <td class="pos">2339.0 USD</td>
+        <td>2023.8 USD</td>
+        <td class="neg">-31.21 EUR</td>
+        <td><span class="badge gagnant">85/100 Ideal</span></td>
+        <td>2026-03-29</td>
+        <td><span class="badge ouvert">OUVERT</span></td>
+      </tr>
+      <tr>
+        <td>ORD-004</td>
+        <td><strong>AAPL</strong></td>
+        <td>ACHAT</td>
+        <td>252.0 USD</td>
+        <td class="neg">238.5 USD</td>
+        <td class="pos">274.5 USD</td>
+        <td>248.8 USD</td>
+        <td class="neg">-12.70 EUR</td>
+        <td><span class="badge gagnant">65/100 Ideal</span></td>
+        <td>2026-03-30</td>
+        <td><span class="badge ouvert">OUVERT</span></td>
+      </tr>
+      <tr>
+        <td>ORD-006</td>
+        <td><strong>AIR.PA</strong></td>
+        <td>ACHAT</td>
+        <td>160.42 EUR</td>
+        <td class="neg">151.99 EUR</td>
+        <td class="pos">174.47 EUR</td>
+        <td>160.42 EUR</td>
+        <td class="pos">+0.00 EUR</td>
+        <td><span class="badge gagnant">70/100 Ideal</span></td>
+        <td>2026-04-04</td>
+        <td><span class="badge ouvert">OUVERT</span></td>
+      </tr>
+      <tr>
+        <td>ORD-007</td>
+        <td><strong>META</strong></td>
+        <td>ACHAT</td>
+        <td>525.72 USD</td>
+        <td class="neg">497.31 USD</td>
+        <td class="pos">573.07 USD</td>
+        <td>525.72 USD</td>
+        <td class="pos">+0.00 EUR</td>
+        <td><span class="badge degrade">45/100 Degrade</span></td>
+        <td>2026-04-04</td>
+        <td><span class="badge ouvert">OUVERT</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Historique -->
+<div class="section">
+  <h2>Historique des Ordres Clotures</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th><th>Actif</th><th>Cloture</th><th>Entree</th>
+        <th>Exit</th><th>PnL realise</th><th>Confiance</th><th>Statut</th>
+      </tr>
+    </thead>
+    <tbody>
+
+      <tr>
+        <td>ORD-001</td>
+        <td><strong>NVDA</strong></td>
+        <td>2026-03-28</td>
+        <td>182.0 USD</td>
+        <td>169.25 USD</td>
+        <td class="neg">-70.00 EUR</td>
+        <td>85/100</td>
+        <td><span class="badge perdant">PERDANT</span></td>
+      </tr>
+      <tr>
+        <td>ORD-002</td>
+        <td><strong>TSLA</strong></td>
+        <td>2026-03-28</td>
+        <td>367.73 USD</td>
+        <td>361.83 USD</td>
+        <td class="neg">-16.05 EUR</td>
+        <td>80/100</td>
+        <td><span class="badge expire">EXPIRE</span></td>
+      </tr>
+      <tr>
+        <td>ORD-005</td>
+        <td><strong>MSFT</strong></td>
+        <td>2026-03-28</td>
+        <td>383.0 USD</td>
+        <td>362.0 USD</td>
+        <td class="neg">-54.81 EUR</td>
+        <td>65/100</td>
+        <td><span class="badge perdant">PERDANT</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Charts -->
+<div class="charts">
+  <div class="chart-wrap">
+    <h2>Evolution du Capital Fictif</h2>
+    <canvas id="capChart" height="180"></canvas>
+  </div>
+  <div class="chart-wrap">
+    <h2>Confiance des Ordres Actifs</h2>
+
+    <div class="conf-bar">
+      <span class="name">ORD-003<br><small>ETH-USD</small></span>
+      <div class="bar-wrap"><div class="bar" style="width:85%;background:#3fb950"></div></div>
+      <span class="score">85</span>
+    </div>
+    <div class="conf-bar">
+      <span class="name">ORD-001<br><small>NVDA</small></span>
+      <div class="bar-wrap"><div class="bar" style="width:85%;background:#3fb950"></div></div>
+      <span class="score">85</span>
+    </div>
+    <div class="conf-bar">
+      <span class="name">ORD-002<br><small>TSLA</small></span>
+      <div class="bar-wrap"><div class="bar" style="width:80%;background:#3fb950"></div></div>
+      <span class="score">80</span>
+    </div>
+    <div class="conf-bar">
+      <span class="name">ORD-006<br><small>AIR.PA</small></span>
+      <div class="bar-wrap"><div class="bar" style="width:70%;background:#3fb950"></div></div>
+      <span class="score">70</span>
+    </div>
+    <div class="conf-bar">
+      <span class="name">ORD-004<br><small>AAPL</small></span>
+      <div class="bar-wrap"><div class="bar" style="width:65%;background:#3fb950"></div></div>
+      <span class="score">65</span>
+    </div>
+    <div class="conf-bar">
+      <span class="name">ORD-005<br><small>MSFT</small></span>
+      <div class="bar-wrap"><div class="bar" style="width:65%;background:#3fb950"></div></div>
+      <span class="score">65</span>
+    </div>
+    <div class="conf-bar">
+      <span class="name">ORD-007<br><small>META</small></span>
+      <div class="bar-wrap"><div class="bar" style="width:45%;background:#d29922"></div></div>
+      <span class="score">45</span>
+    </div>
+  </div>
+</div>
+
+<!-- Capital chart script -->
 <script>
-const darkOpts = {
-  scales: {
-    x: { grid: { color: '#2d3748' }, ticks: { color: '#94a3b8' } },
-    y: { grid: { color: '#2d3748' }, ticks: { color: '#94a3b8' } }
-  },
-  plugins: { legend: { labels: { color: '#94a3b8', font: { size: 12 } } } },
-  responsive: true, maintainAspectRatio: false
-};
+const capCtx = document.getElementById('capChart').getContext('2d');
+const capLabels = ["2026-03-21", "2026-03-22", "2026-03-23", "2026-03-28"];
+const capData   = [10000.0, 9949.57, 9947.62, 9806.76];
 
-// Capital chart
-new Chart(document.getElementById('capitalChart'), {
+new Chart(capCtx, {
   type: 'line',
   data: {
-    labels: ['21/03 (Init)', '22/03 (J2)', '23/03 (J3)'],
+    labels: capLabels,
     datasets: [{
-      label: 'Capital fictif (€)',
-      data: [10000, 9949.57, 9947.62],
-      borderColor: '#6c63ff', backgroundColor: 'rgba(108,99,255,0.1)',
-      borderWidth: 2.5, pointBackgroundColor: ['#6c63ff','#ff4d6d','#ffd166'],
-      pointRadius: 7, tension: 0.3, fill: true
+      label: 'Capital (EUR)',
+      data: capData,
+      borderColor: '#58a6ff',
+      backgroundColor: 'rgba(88,166,255,0.08)',
+      tension: 0.3,
+      pointBackgroundColor: capData.map(v => v >= 10000 ? '#3fb950' : '#f85149'),
+      pointRadius: 5,
+      fill: true
     }]
   },
   options: {
-    ...darkOpts,
-    plugins: { ...darkOpts.plugins, tooltip: { callbacks: { label: c => '€' + c.parsed.y.toFixed(2) } } },
+    plugins: { legend: { display: false } },
     scales: {
-      x: darkOpts.scales.x,
-      y: { ...darkOpts.scales.y, min: 9900, max: 10100, ticks: { ...darkOpts.scales.y.ticks, callback: v => '€' + v.toLocaleString() } }
-    }
-  }
-});
-
-// Pie chart
-new Chart(document.getElementById('assetChart'), {
-  type: 'doughnut',
-  data: {
-    labels: ['Actions US (NVDA+TSLA+AAPL+MSFT)', 'Crypto (ETH-USD)', 'Cash non engagé'],
-    datasets: [{
-      data: [4000, 1000, 5000],
-      backgroundColor: ['rgba(108,99,255,0.7)', 'rgba(0,212,170,0.7)', 'rgba(100,116,139,0.3)'],
-      borderColor: ['#6c63ff','#00d4aa','#475569'], borderWidth: 2
-    }]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: {
-      legend: { position: 'bottom', labels: { color: '#94a3b8', padding: 14, font: { size: 11 } } },
-      tooltip: { callbacks: { label: c => c.label + ': €' + c.parsed + ' (' + (c.parsed/10000*100).toFixed(0) + '% du capital)' } }
-    }
-  }
-});
-
-// Confidence bar
-new Chart(document.getElementById('confidenceChart'), {
-  type: 'bar',
-  data: {
-    labels: ['ORD-001 NVDA','ORD-002 TSLA','ORD-003 ETH','ORD-004 AAPL','ORD-005 MSFT'],
-    datasets: [
-      {
-        label: 'Score de Confiance',
-        data: [85, 80, 85, 65, 65],
-        backgroundColor: [
-          'rgba(108,99,255,0.65)',
-          'rgba(255,209,102,0.65)',
-          'rgba(0,212,170,0.65)',
-          'rgba(0,196,140,0.55)',
-          'rgba(0,196,140,0.55)'
-        ],
-        borderColor: ['#6c63ff','#ffd166','#00d4aa','#00c48c','#00c48c'],
-        borderWidth: 2, borderRadius: 8
-      },
-      {
-        label: 'Seuil min (55)',
-        data: [55, 55, 55, 55, 55],
-        type: 'line', borderColor: '#ff4d6d', borderWidth: 2,
-        borderDash: [6,4], pointRadius: 0, fill: false,
-        backgroundColor: 'transparent'
-      }
-    ]
-  },
-  options: {
-    ...darkOpts,
-    scales: {
-      x: darkOpts.scales.x,
-      y: { ...darkOpts.scales.y, min: 0, max: 100 }
+      x: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } },
+      y: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } }
     }
   }
 });
 </script>
+
+<div class="section" style="font-size:.8rem;color:var(--muted);">
+  Derniere mise a jour : 2026-03-28 &bull;
+  Capital depart : 10 000 EUR &bull; Taille trade : 1 000 EUR &bull;
+  <em>Tous les ordres sont purement fictifs et a but educatif.</em>
+</div>
+
 </body>
 </html>

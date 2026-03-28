@@ -29,7 +29,12 @@
       "sentiment_communaute": "HAUSSIER — Reddit (WallStreetBets) : 113 mentions / 24h, 63% de commentaires positifs vs 37% négatifs. Score de sentiment agrégé Altindex : 75/100. Seeking Alpha : analystes communautaires majoritairement bullish avec cible $250-320.",
       "risques_identifies": "1) Restrictions d'export US sur les puces IA vers la Chine (20-25% des revenus datacenters). 2) Engagements supply chain de $95.2 milliards. 3) MACD toujours en territoire négatif. 4) Marché global sous pression géopolitique (Moyen-Orient).",
       "conclusion": "Malgré un contexte de marché difficile et un MACD encore négatif, la combinaison RSI en survente + support historique à $178-182 + vague de upgrades analystes créent un ratio risque/rendement attractif (1.67) sur 5 jours. Score 85/100.",
-      "cloture": null
+      "cloture": {
+        "date_cloture": "2026-03-28",
+        "statut_final": "CLOTURE_PERDANT",
+        "pnl_euros": "-70.00",
+        "commentaire_retour": "Stop Loss atteint."
+      }
     },
     {
       "id_ordre": "ORD-002",
@@ -60,7 +65,12 @@
       "sentiment_communaute": "NEUTRE/MITIGÉ — Sentiment divisé : bulls misent sur le Cybercab et la reprise du marché EV, bears soulignent la pression de la concurrence chinoise (BYD). 10 analystes sur 34 ont une recommandation de vente. TradingView signale une configuration haussière à court terme.",
       "risques_identifies": "1) Concurrence EV chinoise (BYD, NIO). 2) 10/34 analystes ont une recommandation VENTE. 3) NHTSA FSD probe escaladée en Engineering Analysis (3.2M véhicules) le 18/03 — risque recall potentiel. 4) UBS a revu à la baisse ses prévisions de livraisons Q1.",
       "conclusion": "Le MACD haussier confirmé et le support solide à $364 créent une configuration technique favorable sur 5 jours. Le catalyseur Cybercab (production imminente en avril 2026) est un moteur fondamental de court terme. Avec un ratio RR de 1.67 et un score de 80/100. Surveiller de près le SL à $348.23 compte tenu de l'escalade NHTSA.",
-      "cloture": null
+      "cloture": {
+        "date_cloture": "2026-03-28",
+        "statut_final": "EXPIRE",
+        "pnl_euros": "-16.05",
+        "commentaire_retour": "Position expiree (5 jours ouvres sans declenchement TP/SL)."
+      }
     },
     {
       "id_ordre": "ORD-003",
@@ -99,8 +109,8 @@
       "actif": "AAPL",
       "direction": "ACHAT",
       "prix_entree": 252.0,
-      "stop_loss": 238.50,
-      "take_profit": 274.50,
+      "stop_loss": 238.5,
+      "take_profit": 274.5,
       "taille": 1000,
       "score_confiance": 65,
       "detail_score": {
@@ -153,6 +163,74 @@
       "sentiment_communaute": "HAUSSIER (technique) — La communauté de trading identifie le double bottom $380 comme un setup classique de retournement. Seeking Alpha : analystes communautaires soulignent la valorisation attractive à 25x P/E vs moyenne historique 30x. TradingView : plusieurs analystes techniques ont publié des analyses bullish sur le double bottom $380. Sentiment général risk-on aujourd'hui amplifie le signal.",
       "risques_identifies": "1) MACD encore sous la ligne signal — momentum de fond toujours baissier. 2) Death cross EMA50 < EMA200 — tendance long terme baissière. 3) Macro géopolitique : la pause Iran est temporaire (5 jours), risque de reprendre les tensions. 4) Taux d'intérêt maintenus (Fed) pesant sur les valorisations tech. 5) Concurrence dans l'IA (Google Gemini, Anthropic) pouvant limiter la domination Copilot.",
       "conclusion": "Le double bottom confirmé sur $380 + pivot simultané de 3 oscillateurs (RSI, Williams %R, Stochastics) depuis survente constitue un setup de retournement technique solide. Le contexte de rally Iran de-escalation le 23/03 amplifie la probabilité d'un rebond. Score 65/100 — confiance modérée justifiée par l'absence de croisement MACD. Position €1,000 avec SL $362 (risque max ~€55).",
+      "cloture": {
+        "date_cloture": "2026-03-28",
+        "statut_final": "CLOTURE_PERDANT",
+        "pnl_euros": "-54.81",
+        "commentaire_retour": "Stop Loss atteint."
+      }
+    },
+    {
+      "id_ordre": "ORD-006",
+      "date": "2026-03-28 09:30",
+      "actif": "AIR.PA",
+      "direction": "ACHAT",
+      "prix_entree": 160.42,
+      "stop_loss": 151.99,
+      "take_profit": 174.47,
+      "taille": 1000,
+      "score_confiance": 70,
+      "detail_score": {
+        "rsi_survente": 20,
+        "macd_croisement": 0,
+        "bollinger_rebond": 15,
+        "ema_tendance": 0,
+        "volume_confirmation": 0,
+        "support_horizontal": 15,
+        "bonus_actualite_positive": 10,
+        "bonus_sentiment_haussier": 5,
+        "bonus_aucune_actualite_negative": 5,
+        "malus_evenement_macro": 0,
+        "malus_actualite_negative": 0,
+        "malus_resultats_proches": 0
+      },
+      "signaux_techniques": "RSI(14) a 32.4 en zone survente. Prix (160.42 EUR) rebondit sur bande Bollinger inf et support 157.88. Correction -11.6% sur 4 semaines a ramene le titre aux plus bas aout 2025. MACD negatif mais momentum vente ralentit. ATR 5.62 EUR.",
+      "contexte_actualite": "Consensus analyste exceptionnel: 15 BUY/0 SELL/6 HOLD sur 21 analystes. Cible moyenne 219.55 EUR (+37% upside), haut 259 EUR. Resultats Q1 le 28 avril (31 jours, hors risque immediat). Fort carnet de commandes A320neo. Tensions Moyen-Orient impactent marginalement les livraisons court terme.",
+      "sentiment_communaute": "HAUSSIER — Analystes communautaires positifs. eToro/TradingView cible analyste 214 EUR. Aucune panique communautaire detectable. Correction percue comme opportunite d'achat.",
+      "risques_identifies": "1) Tensions geopolitiques Moyen-Orient (livraisons). 2) MACD negatif. 3) EMA20 < EMA50. 4) EUR/USD appreciation pesant sur revenus USD. 5) Resultats Q1 le 28 avril.",
+      "conclusion": "Airbus RSI survente + support Bollinger + consensus analyste tres haussier (cible +37%) + aucune mauvaise nouvelle specifique = profil risque/rendement excellent. Score 70/100, seuil ideal. SL 151.99 EUR, risque max ~52 EUR.",
+      "cloture": null
+    },
+    {
+      "id_ordre": "ORD-007",
+      "date": "2026-03-28 09:30",
+      "actif": "META",
+      "direction": "ACHAT",
+      "prix_entree": 525.72,
+      "stop_loss": 497.31,
+      "take_profit": 573.07,
+      "taille": 1000,
+      "score_confiance": 45,
+      "detail_score": {
+        "rsi_survente": 20,
+        "macd_croisement": 0,
+        "bollinger_rebond": 15,
+        "ema_tendance": 0,
+        "volume_confirmation": 15,
+        "support_horizontal": 15,
+        "bonus_actualite_positive": 0,
+        "bonus_sentiment_haussier": 0,
+        "bonus_aucune_actualite_negative": 0,
+        "malus_evenement_macro": 0,
+        "malus_actualite_negative": -15,
+        "malus_resultats_proches": 0,
+        "ajustement_sentiment": -5
+      },
+      "signaux_techniques": "RSI(14) a 18.0 (survente extreme et historiquement rare). Volume x1.7 confirme acceleration de vente pouvant preceder retournement. Prix rebondit sur Bollinger inf et support 520. Signal pivot bottom technique detecte le 24/03. MACD negatif mais histogramme se contracte.",
+      "contexte_actualite": "Double verdict negatif: jury californien (4.2M USD dommages) + Nouveau-Mexique (375M USD) pour harm to young users. Chute 7-8% post-verdict. CEPENDANT: 379M USD total < 1% benefice annuel META (~50B USD). Evercore ISI reitere Outperform. Consensus analyste long terme reste majoritairement bullish (AI advertising).",
+      "sentiment_communaute": "TRES BAISSIER/CONTRARIAN — 95% bearish selon Altindex. Extreme polarisation = signal contrarian historique fort. Reddit WSB identifie ce niveau comme potentiel retournement. Selling exhaustion observable. Malus applique -5 (vs -10 standard) car RSI=18 integre deja la panique.",
+      "risques_identifies": "1) Vague de proces potentiels (risque systemique juridique). 2) MACD negatif, momentum vente non epuise. 3) Marche risk-off (Moyen-Orient, Fed hawkish). 4) Brent a 110 USD impact consommation publicitaire. 5) Sentiment peut rester tres negatif plusieurs semaines.",
+      "conclusion": "ORDRE A SEUIL DEGRADE (45/100). Survente extreme RSI=18 + mauvaises nouvelles deja pricees dans -19.5% sur 30j justifie trade contrarian. Dommages negligeables vs rentabilite META. Pivot bottom 24/03 + Evercore Outperform supportent la these. Risque max ~54 EUR (SL 497.31). Regle 1-2 ordres/jour avec seuil degrade appliquee.",
       "cloture": null
     }
   ]
