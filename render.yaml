@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: nvest-backend
+    runtime: python
+    rootDir: .
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: FRONTEND_URL
+        value: https://nvest.vercel.app  # à remplacer par ton URL Vercel réelle
