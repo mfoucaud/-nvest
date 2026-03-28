@@ -9,10 +9,14 @@ Lancement:
     uvicorn backend.main:app --reload --port 8000
 
 Endpoints disponibles:
-    GET  /api/health          → Santé du serveur
-    GET  /api/orders/         → Liste des ordres + métriques
-    GET  /api/orders/{id}     → Détail d'un ordre avec décision
-    GET  /api/prices/{ticker} → Historique OHLCV (query: ?days=10)
+    GET    /api/health                  → Santé du serveur
+    GET    /api/orders/                 → Liste des ordres + métriques
+    POST   /api/orders/                 → Crée un nouvel ordre fictif
+    GET    /api/orders/{id}             → Détail d'un ordre avec décision
+    PATCH  /api/orders/{id}/price       → Met à jour le prix actuel
+    PATCH  /api/orders/{id}/close       → Clôture manuellement un ordre
+    POST   /api/orders/refresh          → Rafraîchit tous les prix + clôtures auto
+    GET    /api/prices/{ticker}         → Historique OHLCV (query: ?days=10)
 
 Documentation interactive:
     http://localhost:8000/docs     (Swagger UI)

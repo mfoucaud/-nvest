@@ -1,5 +1,5 @@
 """
-data_loader.py — Chargement et accès aux données JSON du portefeuille fictif.
+data_loader.py — Chargement, accès et écriture des données JSON du portefeuille fictif.
 
 Les fichiers JSON se trouvent dans le dossier PARENT du dossier backend/.
 Arborescence attendue:
@@ -145,3 +145,37 @@ def get_merged_order(id_ordre: str) -> Optional[dict]:
     merged["decision"] = decision  # None si non trouvé dans le journal
 
     return merged
+
+
+# ---------------------------------------------------------------------------
+# Sauvegarde
+# ---------------------------------------------------------------------------
+
+def save_portfolio(portfolio: dict) -> None:
+    """Écrit portfolio_fictif.json de manière atomique (tmp + rename)."""
+    path = get_portfolio_path()
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps(portfolio, ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp.replace(path)
+
+
+def save_journal(journal: dict) -> None:
+    """Écrit journal_decisions.json de manière atomique."""
+    path = get_journal_path()
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps(journal, ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp.replace(path)
+
+
+def next_order_id() -> str:
+    """Génère le prochain ID d'ordre (ORD-001, ORD-002, …)."""
+    all_orders = get_all_orders()
+    if not all_orders:
+        return "ORD-001"
+    nums = []
+    for o in all_orders:
+        try:
+            nums.append(int(o["id_ordre"].split("-")[1]))
+        except (IndexError, ValueError):
+            pass
+    return f"ORD-{max(nums) + 1:03d}" if nums else "ORD-001"
