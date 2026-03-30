@@ -2,3 +2,14 @@ fastapi
 uvicorn[standard]
 yfinance
 pydantic
+sqlalchemy>=2.0
+alembic
+apscheduler>=3.10
+anthropic>=0.40
+psycopg2-binary
+pandas
+numpy
+pytest
+pytest-asyncio
+pytest-mock
+httpx
