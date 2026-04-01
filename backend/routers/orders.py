@@ -1,31 +1,24 @@
 """
-routers/orders.py — Endpoints pour la gestion des ordres du portefeuille fictif.
-
-Prefix: /orders (monté sous /api dans main.py → URLs finales: /api/orders/...)
+routers/orders.py — Endpoints CRUD pour les ordres fictifs (!nvest).
+Persistance via PostgreSQL (SQLAlchemy) — remplace data_loader.py.
 
 Endpoints:
     GET    /api/orders/              → Liste tous les ordres + métriques
-    POST   /api/orders/              → Crée un nouvel ordre fictif
-    GET    /api/orders/{id}          → Détail d'un ordre fusionné avec sa décision
-    PATCH  /api/orders/{id}/price    → Met à jour le prix actuel d'un ordre ouvert
-    PATCH  /api/orders/{id}/close    → Clôture manuellement un ordre
-    POST   /api/orders/refresh       → Rafraîchit tous les prix + clôtures automatiques
+    POST   /api/orders/              → Crée un nouvel ordre
+    GET    /api/orders/{id}          → Détail ordre + décision
+    PATCH  /api/orders/{id}/price    → Met à jour le prix actuel
+    PATCH  /api/orders/{id}/close    → Clôture un ordre
+    POST   /api/orders/refresh       → Rafraîchit tous les prix + clôtures auto
 """
-
 from datetime import datetime, date, timedelta
 from typing import Optional, Literal
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
 
-from backend.services.data_loader import (
-    load_portfolio,
-    load_journal,
-    save_portfolio,
-    save_journal,
-    get_merged_order,
-    next_order_id,
-)
+from backend.database import get_db
+from backend.models import Order, Decision, CapitalHistory
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 
@@ -77,7 +70,7 @@ class PriceUpdate(BaseModel):
 
 class CloseOrder(BaseModel):
     statut: Literal["CLOTURE_GAGNANT", "CLOTURE_PERDANT", "EXPIRE"]
-    prix_sortie: Optional[float] = None   # si None → utilise le SL/TP/prix actuel selon statut
+    prix_sortie: Optional[float] = None
     commentaire: str = ""
 
 
@@ -85,47 +78,108 @@ class CloseOrder(BaseModel):
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _business_days_later(start: date, days: int = 5) -> str:
-    """Retourne la date d'expiration en jours ouvrés."""
+def _business_days_later(start: date, days: int = 5) -> date:
     d = start
     added = 0
     while added < days:
         d += timedelta(days=1)
-        if d.weekday() < 5:  # lundi-vendredi
+        if d.weekday() < 5:
             added += 1
-    return d.isoformat()
+    return d
 
 
-def _recalc_metrics(portfolio: dict) -> None:
-    """Recalcule les métriques à partir des ordres en place."""
-    ouverts  = portfolio.get("ordres", []) or []
-    clotures = portfolio.get("ordres_cloturer", []) or []
+def _next_order_id(db: Session) -> str:
+    last = db.query(Order).order_by(Order.id.desc()).first()
+    if last is None:
+        return "ORD-001"
+    try:
+        n = int(last.id_ordre.split("-")[1])
+        return f"ORD-{n + 1:03d}"
+    except (IndexError, ValueError):
+        return "ORD-001"
 
-    gagnants = [o for o in clotures if o["statut"] == "CLOTURE_GAGNANT"]
-    perdants = [o for o in clotures if o["statut"] == "CLOTURE_PERDANT"]
-    expires  = [o for o in clotures if o["statut"] == "EXPIRE"]
+
+def _order_to_dict(order: Order) -> dict:
+    return {
+        "id_ordre": order.id_ordre,
+        "date_ouverture": order.date_ouverture.strftime("%Y-%m-%d %H:%M") if order.date_ouverture else None,
+        "actif": order.actif,
+        "classe": order.classe,
+        "direction": order.direction,
+        "statut": order.statut,
+        "prix_entree": order.prix_entree,
+        "stop_loss": order.stop_loss,
+        "take_profit": order.take_profit,
+        "ratio_rr": order.ratio_rr,
+        "taille": order.taille,
+        "quantite_fictive": order.quantite_fictive,
+        "confiance": order.confiance,
+        "raison": order.raison,
+        "pnl_latent": order.pnl_latent,
+        "prix_actuel": order.prix_actuel,
+        "prix_sortie": order.prix_sortie,
+        "date_expiration": order.date_expiration.isoformat() if order.date_expiration else None,
+        "date_cloture": order.date_cloture.isoformat() if order.date_cloture else None,
+        "atr_utilise": order.atr_utilise,
+        "alerte": order.alerte,
+    }
+
+
+def _decision_to_dict(decision: Decision) -> dict | None:
+    if decision is None:
+        return None
+    cloture = None
+    if decision.statut_final:
+        cloture = {
+            "date_cloture": decision.date_cloture.isoformat() if decision.date_cloture else None,
+            "statut_final": decision.statut_final,
+            "pnl_euros": decision.pnl_euros,
+            "commentaire_retour": decision.commentaire_retour,
+        }
+    return {
+        "id_ordre": decision.id_ordre,
+        "signaux_techniques": decision.signaux_techniques,
+        "contexte_actualite": decision.contexte_actualite,
+        "sentiment_communaute": decision.sentiment_communaute,
+        "risques_identifies": decision.risques_identifies,
+        "conclusion": decision.conclusion,
+        "score_confiance": decision.score_confiance,
+        "detail_score": decision.detail_score,
+        "cloture": cloture,
+    }
+
+
+def _calc_metrics(db: Session) -> dict:
+    import os
+    capital_depart = float(os.getenv("CAPITAL_DEPART", "10000"))
+
+    ouverts  = db.query(Order).filter(Order.statut == "OUVERT").all()
+    clotures = db.query(Order).filter(Order.statut != "OUVERT").all()
+
+    gagnants = [o for o in clotures if o.statut == "CLOTURE_GAGNANT"]
+    perdants = [o for o in clotures if o.statut == "CLOTURE_PERDANT"]
+    expires  = [o for o in clotures if o.statut == "EXPIRE"]
     nb_clos  = len(clotures)
 
-    pnl_realise    = sum(o.get("pnl_latent", 0) for o in clotures)
-    pnl_latent     = sum(o.get("pnl_latent", 0) for o in ouverts)
-    capital_actuel = portfolio["capital_depart"] + pnl_realise
+    pnl_realise    = sum(o.pnl_latent or 0 for o in clotures)
+    pnl_latent     = sum(o.pnl_latent or 0 for o in ouverts)
+    capital_actuel = capital_depart + pnl_realise
+    gains  = sum(o.pnl_latent or 0 for o in gagnants)
+    pertes = abs(sum(o.pnl_latent or 0 for o in perdants))
 
-    gains  = sum(o.get("pnl_latent", 0) for o in gagnants)
-    pertes = abs(sum(o.get("pnl_latent", 0) for o in perdants))
-
-    portfolio["metriques"] = {
+    return {
         "win_rate":            round(len(gagnants) / nb_clos * 100, 1) if nb_clos else None,
         "pnl_total_eur":       round(pnl_realise, 2),
         "pnl_latent_eur":      round(pnl_latent, 2),
-        "pnl_total_pct":       round(pnl_realise / portfolio["capital_depart"] * 100, 2),
+        "pnl_total_pct":       round(pnl_realise / capital_depart * 100, 2),
         "profit_factor":       round(gains / pertes, 2) if pertes > 0 else None,
         "nb_trades_total":     nb_clos + len(ouverts),
         "nb_trades_ouverts":   len(ouverts),
         "nb_trades_gagnants":  len(gagnants),
         "nb_trades_perdants":  len(perdants),
         "nb_trades_expires":   len(expires),
-        "meilleur_trade":      max((o["pnl_latent"] for o in clotures), default=None),
-        "pire_trade":          min((o["pnl_latent"] for o in clotures), default=None),
+        "meilleur_trade":      max((o.pnl_latent for o in clotures if o.pnl_latent), default=None),
+        "pire_trade":          min((o.pnl_latent for o in clotures if o.pnl_latent), default=None),
         "capital_actuel":      round(capital_actuel, 2),
         "derniere_mise_a_jour": date.today().isoformat(),
     }
@@ -136,13 +190,19 @@ def _recalc_metrics(portfolio: dict) -> None:
 # ---------------------------------------------------------------------------
 
 @router.get("/", summary="Liste tous les ordres + métriques")
-def list_orders() -> dict:
-    portfolio = load_portfolio()
+def list_orders(db: Session = Depends(get_db)) -> dict:
+    ouverts  = db.query(Order).filter(Order.statut == "OUVERT").all()
+    cloturer = db.query(Order).filter(Order.statut != "OUVERT").all()
+    capital  = db.query(CapitalHistory).order_by(CapitalHistory.date).all()
+
     return {
-        "ouverts":            portfolio.get("ordres", []) or [],
-        "cloturer":           portfolio.get("ordres_cloturer", []) or [],
-        "metriques":          portfolio.get("metriques", {}) or {},
-        "historique_capital": portfolio.get("historique_capital", []) or [],
+        "ouverts":            [_order_to_dict(o) for o in ouverts],
+        "cloturer":           [_order_to_dict(o) for o in cloturer],
+        "metriques":          _calc_metrics(db),
+        "historique_capital": [
+            {"date": h.date.isoformat(), "capital": h.capital, "note": h.note}
+            for h in capital
+        ],
     }
 
 
@@ -151,76 +211,56 @@ def list_orders() -> dict:
 # ---------------------------------------------------------------------------
 
 @router.post("/", status_code=201, summary="Crée un nouvel ordre fictif")
-def create_order(body: OrderIn) -> dict:
-    """
-    Crée un ordre dans portfolio_fictif.json et, si une `decision` est fournie,
-    l'enregistre dans journal_decisions.json.
+def create_order(body: OrderIn, db: Session = Depends(get_db)) -> dict:
+    id_ordre = _next_order_id(db)
+    now      = datetime.now()
+    today    = date.today()
+    expiry   = _business_days_later(today)
 
-    Le ratio RR et la quantité fictive sont calculés automatiquement.
-    L'ID et la date d'expiration (J+5 ouvrés) sont générés côté serveur.
-    """
-    portfolio = load_portfolio()
-    journal   = load_journal()
+    prix = body.prix_entree
+    sl   = body.stop_loss
+    tp   = body.take_profit
+    qty  = round(body.taille / prix, 4) if prix else 0
+    rr   = round((tp - prix) / (prix - sl), 2) if (prix - sl) != 0 else None
 
-    id_ordre  = next_order_id()
-    now       = datetime.now().strftime("%Y-%m-%d %H:%M")
-    today     = date.today()
-    expiry    = _business_days_later(today)
+    order = Order(
+        id_ordre=id_ordre,
+        date_ouverture=now,
+        actif=body.actif,
+        classe=body.classe,
+        direction=body.direction,
+        statut="OUVERT",
+        prix_entree=prix,
+        stop_loss=sl,
+        take_profit=tp,
+        ratio_rr=rr,
+        taille=body.taille,
+        quantite_fictive=qty,
+        confiance=body.confiance,
+        raison=body.raison,
+        date_expiration=expiry,
+        prix_actuel=prix,
+        pnl_latent=0.0,
+    )
+    db.add(order)
+    db.flush()
 
-    prix  = body.prix_entree
-    sl    = body.stop_loss
-    tp    = body.take_profit
-    qty   = round(body.taille / prix, 4) if prix else 0
-    rr    = round((tp - prix) / (prix - sl), 2) if (prix - sl) != 0 else None
-
-    ordre = {
-        "id_ordre":         id_ordre,
-        "date_ouverture":   now,
-        "actif":            body.actif,
-        "classe":           body.classe,
-        "direction":        body.direction,
-        "prix_entree":      prix,
-        "stop_loss":        sl,
-        "take_profit":      tp,
-        "ratio_rr":         rr,
-        "taille":           body.taille,
-        "quantite_fictive": qty,
-        "confiance":        body.confiance,
-        "statut":           "OUVERT",
-        "raison":           body.raison,
-        "date_expiration":  expiry,
-        "prix_actuel":      prix,
-        "pnl_latent":       0.0,
-    }
-
-    portfolio.setdefault("ordres", []).append(ordre)
-    _recalc_metrics(portfolio)
-    save_portfolio(portfolio)
-
-    # Journal de décision
     if body.decision:
         d = body.decision
-        journal.setdefault("decisions", []).append({
-            "id_ordre":              id_ordre,
-            "date":                  now,
-            "actif":                 body.actif,
-            "direction":             body.direction,
-            "prix_entree":           prix,
-            "stop_loss":             sl,
-            "take_profit":           tp,
-            "taille":                body.taille,
-            "score_confiance":       body.confiance,
-            "detail_score":          d.detail_score.model_dump(),
-            "signaux_techniques":    d.signaux_techniques,
-            "contexte_actualite":    d.contexte_actualite,
-            "sentiment_communaute":  d.sentiment_communaute,
-            "risques_identifies":    d.risques_identifies,
-            "conclusion":            d.conclusion,
-            "cloture":               None,
-        })
-        save_journal(journal)
+        decision = Decision(
+            id_ordre=id_ordre,
+            signaux_techniques=d.signaux_techniques,
+            contexte_actualite=d.contexte_actualite,
+            sentiment_communaute=d.sentiment_communaute,
+            risques_identifies=d.risques_identifies,
+            conclusion=d.conclusion,
+            score_confiance=body.confiance,
+            detail_score=d.detail_score.model_dump(),
+        )
+        db.add(decision)
+        db.flush()
 
-    return {"id_ordre": id_ordre, "ordre": ordre}
+    return {"id_ordre": id_ordre, "ordre": _order_to_dict(order)}
 
 
 # ---------------------------------------------------------------------------
@@ -228,10 +268,13 @@ def create_order(body: OrderIn) -> dict:
 # ---------------------------------------------------------------------------
 
 @router.get("/{id_ordre}", summary="Détail d'un ordre fusionné avec sa décision")
-def get_order(id_ordre: str) -> dict:
-    merged = get_merged_order(id_ordre)
-    if merged is None:
+def get_order(id_ordre: str, db: Session = Depends(get_db)) -> dict:
+    order = db.query(Order).filter(Order.id_ordre == id_ordre).first()
+    if order is None:
         raise HTTPException(404, detail=f"Ordre '{id_ordre}' introuvable.")
+    decision = db.query(Decision).filter(Decision.id_ordre == id_ordre).first()
+    merged = _order_to_dict(order)
+    merged["decision"] = _decision_to_dict(decision)
     return merged
 
 
@@ -240,31 +283,17 @@ def get_order(id_ordre: str) -> dict:
 # ---------------------------------------------------------------------------
 
 @router.patch("/{id_ordre}/price", summary="Met à jour le prix actuel d'un ordre ouvert")
-def update_price(id_ordre: str, body: PriceUpdate) -> dict:
-    """
-    Met à jour `prix_actuel` et recalcule `pnl_latent`.
-    Ne modifie pas le statut — utilisez `/close` pour clôturer.
-    Retourne 404 si l'ordre est inconnu, 409 s'il est déjà clôturé.
-    """
-    portfolio = load_portfolio()
-    ouverts   = portfolio.get("ordres", []) or []
+def update_price(id_ordre: str, body: PriceUpdate, db: Session = Depends(get_db)) -> dict:
+    order = db.query(Order).filter(Order.id_ordre == id_ordre).first()
+    if order is None:
+        raise HTTPException(404, detail=f"Ordre '{id_ordre}' introuvable.")
+    if order.statut != "OUVERT":
+        raise HTTPException(409, detail=f"Ordre '{id_ordre}' déjà clôturé.")
 
-    for ordre in ouverts:
-        if ordre["id_ordre"] == id_ordre:
-            ordre["prix_actuel"] = body.prix_actuel
-            ordre["pnl_latent"]  = round(
-                (body.prix_actuel - ordre["prix_entree"]) * ordre["quantite_fictive"], 2
-            )
-            _recalc_metrics(portfolio)
-            save_portfolio(portfolio)
-            return {"id_ordre": id_ordre, "prix_actuel": body.prix_actuel, "pnl_latent": ordre["pnl_latent"]}
-
-    # Vérifier si clôturé
-    for o in portfolio.get("ordres_cloturer", []) or []:
-        if o["id_ordre"] == id_ordre:
-            raise HTTPException(409, detail=f"Ordre '{id_ordre}' déjà clôturé.")
-
-    raise HTTPException(404, detail=f"Ordre '{id_ordre}' introuvable.")
+    order.prix_actuel = body.prix_actuel
+    order.pnl_latent  = round((body.prix_actuel - order.prix_entree) * (order.quantite_fictive or 0), 2)
+    db.flush()
+    return {"id_ordre": id_ordre, "prix_actuel": body.prix_actuel, "pnl_latent": order.pnl_latent}
 
 
 # ---------------------------------------------------------------------------
@@ -272,71 +301,54 @@ def update_price(id_ordre: str, body: PriceUpdate) -> dict:
 # ---------------------------------------------------------------------------
 
 @router.patch("/{id_ordre}/close", summary="Clôture manuellement un ordre")
-def close_order(id_ordre: str, body: CloseOrder) -> dict:
-    """
-    Déplace l'ordre des `ordres` vers `ordres_cloturer`, calcule le PnL réalisé
-    et met à jour le champ `cloture` dans le journal de décisions.
-
-    - `prix_sortie` optionnel : si absent, utilise le SL pour CLOTURE_PERDANT,
-      le TP pour CLOTURE_GAGNANT, le `prix_actuel` pour EXPIRE.
-    """
-    portfolio = load_portfolio()
-    journal   = load_journal()
-    ouverts   = portfolio.get("ordres", []) or []
-
-    idx = next((i for i, o in enumerate(ouverts) if o["id_ordre"] == id_ordre), None)
-    if idx is None:
-        for o in portfolio.get("ordres_cloturer", []) or []:
-            if o["id_ordre"] == id_ordre:
-                raise HTTPException(409, detail=f"Ordre '{id_ordre}' déjà clôturé.")
+def close_order(id_ordre: str, body: CloseOrder, db: Session = Depends(get_db)) -> dict:
+    order = db.query(Order).filter(Order.id_ordre == id_ordre).first()
+    if order is None:
         raise HTTPException(404, detail=f"Ordre '{id_ordre}' introuvable.")
+    if order.statut != "OUVERT":
+        raise HTTPException(409, detail=f"Ordre '{id_ordre}' déjà clôturé.")
 
-    ordre = ouverts.pop(idx)
-
-    # Déterminer le prix de sortie
     if body.prix_sortie is not None:
         exit_price = body.prix_sortie
     elif body.statut == "CLOTURE_PERDANT":
-        exit_price = ordre["stop_loss"]
+        exit_price = order.stop_loss
     elif body.statut == "CLOTURE_GAGNANT":
-        exit_price = ordre["take_profit"]
+        exit_price = order.take_profit
     else:
-        exit_price = ordre.get("prix_actuel", ordre["prix_entree"])
+        exit_price = order.prix_actuel or order.prix_entree
 
-    pnl = round((exit_price - ordre["prix_entree"]) * ordre["quantite_fictive"], 2)
+    pnl = round((exit_price - order.prix_entree) * (order.quantite_fictive or 0), 2)
+    today_str = date.today()
 
-    ordre.update({
-        "statut":       body.statut,
-        "prix_actuel":  exit_price,
-        "pnl_latent":   pnl,
-        "date_cloture": date.today().isoformat(),
-    })
-
-    portfolio.setdefault("ordres_cloturer", []).append(ordre)
-    _recalc_metrics(portfolio)
+    order.statut       = body.statut
+    order.prix_actuel  = exit_price
+    order.prix_sortie  = exit_price
+    order.pnl_latent   = pnl
+    order.date_cloture = today_str
 
     # Historique capital
-    capital = portfolio["metriques"]["capital_actuel"]
-    portfolio.setdefault("historique_capital", []).append({
-        "date":    date.today().isoformat(),
-        "capital": capital,
-        "note":    f"Cloture {id_ordre} ({body.statut}) PnL {pnl:+.2f}EUR",
-    })
+    import os
+    capital_depart = float(os.getenv("CAPITAL_DEPART", "10000"))
+    pnl_realise = sum(
+        o.pnl_latent or 0
+        for o in db.query(Order).filter(Order.statut != "OUVERT").all()
+    )
+    capital_actuel = capital_depart + pnl_realise + pnl
+    db.add(CapitalHistory(
+        date=today_str,
+        capital=round(capital_actuel, 2),
+        note=f"Cloture {id_ordre} ({body.statut}) PnL {pnl:+.2f}EUR",
+    ))
 
-    save_portfolio(portfolio)
+    # Mise à jour décision
+    decision = db.query(Decision).filter(Decision.id_ordre == id_ordre).first()
+    if decision:
+        decision.date_cloture       = today_str
+        decision.statut_final       = body.statut
+        decision.pnl_euros          = f"{pnl:+.2f}"
+        decision.commentaire_retour = body.commentaire or "Cloture manuelle via API."
 
-    # Mise à jour journal
-    for dec in journal.get("decisions", []) or []:
-        if dec["id_ordre"] == id_ordre:
-            dec["cloture"] = {
-                "date_cloture":      date.today().isoformat(),
-                "statut_final":      body.statut,
-                "pnl_euros":         f"{pnl:+.2f}",
-                "commentaire_retour": body.commentaire or f"Cloture manuelle via API.",
-            }
-            save_journal(journal)
-            break
-
+    db.flush()
     return {"id_ordre": id_ordre, "statut": body.statut, "pnl": pnl, "exit_price": exit_price}
 
 
@@ -345,109 +357,85 @@ def close_order(id_ordre: str, body: CloseOrder) -> dict:
 # ---------------------------------------------------------------------------
 
 @router.post("/refresh", summary="Rafraîchit tous les prix + clôtures automatiques")
-def refresh_prices() -> dict:
-    """
-    Pour chaque ordre ouvert :
-      1. Récupère le prix actuel via yfinance.
-      2. Recalcule le PnL latent.
-      3. Clôture automatiquement si TP/SL atteint ou expiration dépassée.
-
-    Retourne un résumé des prix mis à jour et des clôtures déclenchées.
-    """
+def refresh_prices(db: Session = Depends(get_db)) -> dict:
     try:
         import yfinance as yf
     except ImportError:
-        raise HTTPException(500, detail="yfinance non installé (pip install yfinance).")
+        raise HTTPException(500, detail="yfinance non installé.")
 
-    portfolio = load_portfolio()
-    journal   = load_journal()
-    ouverts   = portfolio.get("ordres", []) or []
-    today_str = date.today().isoformat()
+    import os
+    capital_depart = float(os.getenv("CAPITAL_DEPART", "10000"))
+    today_str = date.today()
+    updated = []
+    closed  = []
+    errors  = []
 
-    updated   = []
-    closed    = []
-    errors    = []
+    ouverts = db.query(Order).filter(Order.statut == "OUVERT").all()
 
-    encore_ouverts = []
-
-    for ordre in ouverts:
-        actif = ordre["actif"]
+    for order in ouverts:
         try:
-            hist = yf.Ticker(actif).history(period="2d", interval="1d")
+            hist = yf.Ticker(order.actif).history(period="2d", interval="1d")
             if hist.empty:
-                raise ValueError("Pas de données retournées")
+                raise ValueError("Pas de données")
             prix = round(float(hist["Close"].iloc[-1]), 4)
         except Exception as e:
-            errors.append({"actif": actif, "erreur": str(e)})
-            encore_ouverts.append(ordre)
+            errors.append({"actif": order.actif, "erreur": str(e)})
             continue
 
-        entree = ordre["prix_entree"]
-        sl     = ordre["stop_loss"]
-        tp     = ordre["take_profit"]
-        qty    = ordre["quantite_fictive"]
-        expiry = ordre.get("date_expiration", "")
+        sl     = order.stop_loss
+        tp     = order.take_profit
+        expiry = order.date_expiration
+        qty    = order.quantite_fictive or 0
 
-        # Déterminer statut
         if prix <= sl:
-            statut = "CLOTURE_PERDANT"
-            exit_price = sl
+            statut, exit_price = "CLOTURE_PERDANT", sl
         elif prix >= tp:
-            statut = "CLOTURE_GAGNANT"
-            exit_price = tp
+            statut, exit_price = "CLOTURE_GAGNANT", tp
         elif expiry and expiry <= today_str:
-            statut = "EXPIRE"
-            exit_price = prix
+            statut, exit_price = "EXPIRE", prix
         else:
-            statut = "OUVERT"
-            exit_price = None
+            statut, exit_price = "OUVERT", None
 
-        pnl = round((prix - entree) * qty, 2)
+        pnl = round((prix - order.prix_entree) * qty, 2)
 
         if statut != "OUVERT":
-            exit_pnl = round((exit_price - entree) * qty, 2)
-            ordre.update({
-                "statut":       statut,
-                "prix_actuel":  exit_price,
-                "pnl_latent":   exit_pnl,
-                "date_cloture": today_str,
-            })
-            portfolio.setdefault("ordres_cloturer", []).append(ordre)
-            closed.append({"id_ordre": ordre["id_ordre"], "actif": actif, "statut": statut, "pnl": exit_pnl})
+            exit_pnl = round((exit_price - order.prix_entree) * qty, 2)
+            order.statut       = statut
+            order.prix_actuel  = exit_price
+            order.prix_sortie  = exit_price
+            order.pnl_latent   = exit_pnl
+            order.date_cloture = today_str
 
-            # Journal
-            for dec in journal.get("decisions", []) or []:
-                if dec["id_ordre"] == ordre["id_ordre"] and dec.get("cloture") is None:
-                    dec["cloture"] = {
-                        "date_cloture":       today_str,
-                        "statut_final":       statut,
-                        "pnl_euros":          f"{exit_pnl:+.2f}",
-                        "commentaire_retour": f"Cloture automatique via /refresh (prix={prix}).",
-                    }
+            decision = db.query(Decision).filter(Decision.id_ordre == order.id_ordre).first()
+            if decision and not decision.statut_final:
+                decision.date_cloture       = today_str
+                decision.statut_final       = statut
+                decision.pnl_euros          = f"{exit_pnl:+.2f}"
+                decision.commentaire_retour = f"Clôture automatique (prix={prix})."
+
+            closed.append({"id_ordre": order.id_ordre, "actif": order.actif, "statut": statut, "pnl": exit_pnl})
         else:
-            ordre["prix_actuel"] = prix
-            ordre["pnl_latent"]  = pnl
-            encore_ouverts.append(ordre)
-            updated.append({"id_ordre": ordre["id_ordre"], "actif": actif, "prix": prix, "pnl_latent": pnl})
+            order.prix_actuel = prix
+            order.pnl_latent  = pnl
+            updated.append({"id_ordre": order.id_ordre, "actif": order.actif, "prix": prix, "pnl_latent": pnl})
 
-    portfolio["ordres"] = encore_ouverts
-    _recalc_metrics(portfolio)
-
-    # Historique capital si au moins une clôture
     if closed:
-        portfolio.setdefault("historique_capital", []).append({
-            "date":    today_str,
-            "capital": portfolio["metriques"]["capital_actuel"],
-            "note":    f"Refresh auto: {len(closed)} cloture(s), {len(encore_ouverts)} ouvert(s).",
-        })
+        pnl_realise = sum(
+            o.pnl_latent or 0
+            for o in db.query(Order).filter(Order.statut != "OUVERT").all()
+        )
+        db.add(CapitalHistory(
+            date=today_str,
+            capital=round(capital_depart + pnl_realise, 2),
+            note=f"Refresh auto: {len(closed)} cloture(s).",
+        ))
 
-    save_portfolio(portfolio)
-    save_journal(journal)
+    db.flush()
 
     return {
-        "date":         today_str,
-        "mis_a_jour":   updated,
-        "clotures":     closed,
-        "erreurs":      errors,
-        "metriques":    portfolio["metriques"],
+        "date":       today_str.isoformat(),
+        "mis_a_jour": updated,
+        "clotures":   closed,
+        "erreurs":    errors,
+        "metriques":  _calc_metrics(db),
     }
