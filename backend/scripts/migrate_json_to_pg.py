@@ -122,9 +122,12 @@ def migrate(db: Session, commit: bool = False) -> dict:
 
     # --- Capital history ---
     for entry in portfolio.get("historique_capital") or []:
+        entry_date = _parse_date(entry["date"])
+        if entry_date and db.query(CapitalHistory).filter(CapitalHistory.date == entry_date).first():
+            continue  # déjà migré
         try:
             ch = CapitalHistory(
-                date=_parse_date(entry["date"]),
+                date=entry_date,
                 capital=entry["capital"],
                 note=entry.get("note"),
             )
