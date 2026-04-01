@@ -3,8 +3,20 @@ services:
     name: nvest-backend
     runtime: python
     rootDir: .
-    buildCommand: pip install -r backend/requirements.txt
+    buildCommand: pip install -r backend/requirements.txt && alembic upgrade head
     startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: FRONTEND_URL
-        value: https://nvest.vercel.app  # à remplacer par ton URL Vercel réelle
+        value: https://nvest.vercel.app
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: CAPITAL_DEPART
+        value: "10000"
+      - key: SCAN_HOUR
+        value: "9"
+      - key: SCAN_MIN_CONFIDENCE
+        value: "45"
+      - key: SCAN_MAX_SUGGESTIONS
+        value: "2"
