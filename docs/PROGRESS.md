@@ -22,37 +22,37 @@ Intégrer la logique de détection d'ordres directement dans le backend FastAPI 
 - [x] Brainstorming + questions de cadrage
 - [x] Design validé (architecture, DB, Claude API, tests)
 - [x] Spec doc écrit et committé (`be587bd`)
-- [ ] Plan d'implémentation (writing-plans)
+- [x] Plan d'implémentation (writing-plans)
 
 ### Phase 2 — Base de données
-- [ ] `backend/database.py` — Engine SQLAlchemy, SessionLocal, Base
-- [ ] `backend/models.py` — ORM : Order, Decision, CapitalHistory, ScanRun
-- [ ] Alembic init + première migration (`initial schema`)
-- [ ] `backend/scripts/migrate_json_to_pg.py` — migration one-shot JSON → PG
+- [x] `backend/database.py` — Engine SQLAlchemy, SessionLocal, Base
+- [x] `backend/models.py` — ORM : Order, Decision, CapitalHistory, ScanRun
+- [x] Alembic init + première migration (`initial schema`)
+- [x] `backend/scripts/migrate_json_to_pg.py` — migration one-shot JSON → PG
 
 ### Phase 3 — Services
-- [ ] `backend/services/scanner.py` — indicateurs techniques (RSI, MACD, Bollinger, EMA, Volume, ATR)
-- [ ] `backend/services/claude_service.py` — appel Claude sonnet-4-6 + web_search + parsing JSON
-- [ ] `backend/services/scheduler.py` — APScheduler setup + job quotidien
+- [x] `backend/services/scanner.py` — indicateurs techniques (RSI, MACD, Bollinger, EMA, Volume, ATR)
+- [x] `backend/services/claude_service.py` — appel Claude sonnet-4-6 + web_search + parsing JSON
+- [x] `backend/services/scheduler.py` — APScheduler setup + job quotidien
 
 ### Phase 4 — Routers
-- [ ] `backend/routers/orders.py` — refactorisé pour PostgreSQL (remplace data_loader.py)
-- [ ] `backend/routers/scan.py` — POST /api/scan/run, GET /api/scan/status, GET /api/scan/history
+- [x] `backend/routers/orders.py` — refactorisé pour PostgreSQL (remplace data_loader.py)
+- [x] `backend/routers/scan.py` — POST /api/scan/run, GET /api/scan/status, GET /api/scan/history
 
 ### Phase 5 — Tests
-- [ ] `tests/conftest.py` — DB nvest_test, client FastAPI, fixtures
-- [ ] `tests/test_models.py` — contraintes ORM, FK, unicité
-- [ ] `tests/test_orders.py` — CRUD ordres
-- [ ] `tests/test_scan.py` — indicateurs techniques sur OHLCV statiques
-- [ ] `tests/test_claude_service.py` — Claude mocké, parsing, gestion erreurs
-- [ ] `tests/test_migration.py` — intégrité migration JSON → PG
+- [x] `tests/conftest.py` — DB nvest_test, client FastAPI, fixtures
+- [x] `tests/test_models.py` — contraintes ORM, FK, unicité
+- [x] `tests/test_orders.py` — CRUD ordres
+- [x] `tests/test_scan.py` — indicateurs techniques sur OHLCV statiques
+- [x] `tests/test_claude_service.py` — Claude mocké, parsing, gestion erreurs
+- [x] `tests/test_migration.py` — intégrité migration JSON → PG
 
 ### Phase 6 — Finalisation
-- [ ] `backend/requirements.txt` — ajout dépendances (sqlalchemy, alembic, apscheduler, anthropic, psycopg2)
-- [ ] `render.yaml` — preDeployCommand `alembic upgrade head`
-- [ ] `backend/main.py` — lifespan APScheduler
-- [ ] Code review final (`superpowers:requesting-code-review`)
-- [ ] Suppression `backend/services/data_loader.py`
+- [x] `backend/requirements.txt` — ajout dépendances (sqlalchemy, alembic, apscheduler, anthropic, psycopg2)
+- [x] `render.yaml` — preDeployCommand `alembic upgrade head`
+- [x] `backend/main.py` — lifespan APScheduler
+- [x] Code review final (`superpowers:requesting-code-review`)
+- [x] Suppression `backend/services/data_loader.py`
 
 ---
 
