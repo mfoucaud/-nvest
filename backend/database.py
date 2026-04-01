@@ -5,7 +5,8 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/nvest")
+_raw_url = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/nvest")
+DATABASE_URL = _raw_url.replace("postgres://", "postgresql://", 1)
 
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -17,5 +18,8 @@ def get_db():
     db: Session = SessionLocal()
     try:
         yield db
+    except Exception:
+        db.rollback()
+        raise
     finally:
         db.close()
