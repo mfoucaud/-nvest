@@ -14,10 +14,11 @@ Base = declarative_base()
 
 
 def get_db():
-    """Dépendance FastAPI : fournit une session DB, fermée après la requête."""
+    """Dépendance FastAPI : fournit une session DB, committe si succès, rollback si exception."""
     db: Session = SessionLocal()
     try:
         yield db
+        db.commit()
     except Exception:
         db.rollback()
         raise
