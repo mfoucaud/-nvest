@@ -94,6 +94,10 @@ const CapitalChart = ({ data }) => {
             axisLine={false}
             tickLine={false}
             width={100}
+            domain={([min, max]) => {
+              const padding = (max - min) * 0.1 || 200;
+              return [Math.floor(min - padding), Math.ceil(max + padding)];
+            }}
           />
           <Tooltip content={<CustomTooltip />} />
           <Line

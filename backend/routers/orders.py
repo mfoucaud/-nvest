@@ -175,6 +175,7 @@ def _calc_metrics(db: Session) -> dict:
         "profit_factor":       round(gains / pertes, 2) if pertes > 0 else None,
         "nb_trades_total":     nb_clos + len(ouverts),
         "nb_trades_ouverts":   len(ouverts),
+        "max_positions":       int(os.getenv("SCAN_MAX_POSITIONS", "20")),
         "nb_trades_gagnants":  len(gagnants),
         "nb_trades_perdants":  len(perdants),
         "nb_trades_expires":   len(expires),

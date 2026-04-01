@@ -39,7 +39,7 @@ const MetricsBar = ({ metriques }) => {
     pnl_latent_eur,
     pnl_total_eur,
     nb_trades_ouverts,
-    nb_trades_total,
+    max_positions,
   } = metriques;
 
   const pnlLatent = formatPnl(pnl_latent_eur);
@@ -66,9 +66,9 @@ const MetricsBar = ({ metriques }) => {
       />
       <MetricCard
         label="Trades"
-        value={`${nb_trades_ouverts ?? '—'} / ${nb_trades_total ?? '—'}`}
+        value={`${nb_trades_ouverts ?? '—'} / ${max_positions ?? 20}`}
         valueColor="var(--text)"
-        sub="ouverts / total"
+        sub="ouverts / max"
       />
     </div>
   );

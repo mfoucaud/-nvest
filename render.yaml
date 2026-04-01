@@ -20,3 +20,5 @@ services:
         value: "45"
       - key: SCAN_MAX_SUGGESTIONS
         value: "2"
+      - key: SCAN_MAX_POSITIONS
+        value: "20"
