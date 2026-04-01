@@ -88,6 +88,7 @@ ATR : {candidate.atr}
             max_tokens=1024,
             tools=[{"type": "web_search_20250305", "name": "web_search"}],
             messages=[{"role": "user", "content": prompt}],
+            timeout=60.0,
         )
         text = ""
         for block in response.content:

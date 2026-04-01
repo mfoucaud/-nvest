@@ -6,6 +6,7 @@ Score technique de 0 à 85 pts basé sur RSI, MACD, Bollinger, EMA, Volume, Supp
 """
 from __future__ import annotations
 
+import logging
 import os
 from dataclasses import dataclass, field
 from typing import Optional
@@ -13,6 +14,8 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 import yfinance as yf
+
+logger = logging.getLogger(__name__)
 
 TICKERS: list[str] = [
     # Actions US
@@ -184,7 +187,8 @@ def scan_ticker(ticker: str) -> Optional[Candidate]:
             score_technique=score,
             detail_score=detail,
         )
-    except Exception:
+    except Exception as e:
+        logger.warning(f"scan_ticker {ticker} failed: {e}")
         return None
 
 
