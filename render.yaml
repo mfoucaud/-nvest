@@ -3,7 +3,7 @@ services:
     name: nvest-backend
     runtime: python
     rootDir: .
-    buildCommand: pip install -r backend/requirements.txt && alembic upgrade head
+    buildCommand: pip install -r backend/requirements.txt && alembic upgrade head && python -m backend.scripts.migrate_json_to_pg
     startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: FRONTEND_URL
