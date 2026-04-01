@@ -10,13 +10,13 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 
+TEST_DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/nvest_test"
+
 # Pointer vers la DB de test AVANT tout import backend
-os.environ["DATABASE_URL"] = "postgresql://postgres:postgres@localhost:5432/nvest_test"
+os.environ["DATABASE_URL"] = TEST_DATABASE_URL
 
 from backend.database import Base, get_db  # noqa: E402
 from backend.main import app              # noqa: E402
-
-TEST_DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/nvest_test"
 
 
 @pytest.fixture(scope="session")
@@ -59,7 +59,7 @@ def client(db) -> TestClient:
 def sample_order(db) -> dict:
     """Insère un ordre ouvert dans la DB de test et retourne son dict."""
     from backend.models import Order
-    from datetime import datetime, date, timedelta
+    from datetime import datetime, date
 
     order = Order(
         id_ordre="ORD-TEST-001",
