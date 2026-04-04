@@ -1,5 +1,5 @@
 """
-scheduler.py — APScheduler : scan quotidien automatique à 9h (Europe/Paris).
+scheduler.py — APScheduler : scan quotidien automatique à 14h30 (Europe/Paris), avant ouverture NYSE.
 
 Le scan complet :
   1. Refresh des positions ouvertes (prix yfinance + clôtures auto)
@@ -18,7 +18,8 @@ from backend.models import Order, Decision, CapitalHistory, ScanRun
 
 SCAN_MIN_CONFIDENCE = int(os.getenv("SCAN_MIN_CONFIDENCE", "45"))
 SCAN_MAX_SUGGESTIONS = int(os.getenv("SCAN_MAX_SUGGESTIONS", "2"))
-SCAN_HOUR = int(os.getenv("SCAN_HOUR", "9"))
+SCAN_HOUR   = int(os.getenv("SCAN_HOUR",   "14"))
+SCAN_MINUTE = int(os.getenv("SCAN_MINUTE", "30"))
 CAPITAL_DEPART = float(os.getenv("CAPITAL_DEPART", "10000"))
 
 
@@ -231,7 +232,7 @@ scheduler.add_job(
     run_daily_scan,
     trigger="cron",
     hour=SCAN_HOUR,
-    minute=0,
+    minute=SCAN_MINUTE,
     id="daily_scan",
     replace_existing=True,
     max_instances=1,

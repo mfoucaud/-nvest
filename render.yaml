@@ -15,7 +15,9 @@ services:
       - key: CAPITAL_DEPART
         value: "10000"
       - key: SCAN_HOUR
-        value: "9"
+        value: "14"
+      - key: SCAN_MINUTE
+        value: "30"
       - key: SCAN_MIN_CONFIDENCE
         value: "45"
       - key: SCAN_MAX_SUGGESTIONS

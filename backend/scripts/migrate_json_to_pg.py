@@ -55,11 +55,23 @@ def migrate(db: Session, commit: bool = False) -> dict:
     nb_capital = 0
     errors = []
 
+    nb_updates = 0
+
     # --- Ordres ---
     all_orders = (portfolio.get("ordres") or []) + (portfolio.get("ordres_cloturer") or [])
     for o in all_orders:
-        if db.query(Order).filter(Order.id_ordre == o["id_ordre"]).first():
-            continue  # déjà migré
+        existing = db.query(Order).filter(Order.id_ordre == o["id_ordre"]).first()
+        if existing:
+            # Mettre à jour si le JSON a fermé un ordre encore OUVERT en base
+            if existing.statut == "OUVERT" and o["statut"] != "OUVERT":
+                existing.statut        = o["statut"]
+                existing.prix_actuel   = o.get("prix_actuel", existing.prix_actuel)
+                existing.prix_sortie   = o.get("prix_sortie", existing.prix_sortie)
+                existing.pnl_latent    = o.get("pnl_latent", existing.pnl_latent)
+                existing.date_cloture  = _parse_date(o.get("date_cloture"))
+                db.flush()
+                nb_updates += 1
+            continue
         try:
             order = Order(
                 id_ordre=o["id_ordre"],
@@ -141,6 +153,7 @@ def migrate(db: Session, commit: bool = False) -> dict:
 
     return {
         "nb_orders": nb_orders,
+        "nb_updates": nb_updates,
         "nb_decisions": nb_decisions,
         "nb_capital": nb_capital,
         "errors": errors,
@@ -153,7 +166,8 @@ if __name__ == "__main__":
     try:
         result = migrate(db, commit=True)
         print(f"Migration terminée :")
-        print(f"  {result['nb_orders']} ordres")
+        print(f"  {result['nb_orders']} ordres insérés")
+        print(f"  {result['nb_updates']} ordres mis à jour (statut)")
         print(f"  {result['nb_decisions']} décisions")
         print(f"  {result['nb_capital']} entrées capital")
         if result["errors"]:

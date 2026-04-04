@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { fetchOrders } from '../services/api';
+import { fetchOrders, refreshOrders } from '../services/api';
 
 const useOrders = () => {
   const [data, setData] = useState(null);
@@ -7,7 +7,14 @@ const useOrders = () => {
   const [error, setError] = useState(null);
   const [tick, setTick] = useState(0);
 
-  const refetch = useCallback(() => {
+  const refetch = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      await refreshOrders();
+    } catch {
+      // refresh échoue silencieusement — on re-fetch quand même
+    }
     setTick((t) => t + 1);
   }, []);
 

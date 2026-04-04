@@ -2,7 +2,7 @@
 const BASE_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:8000') + '/api';
 
 export const fetchOrders = async () => {
-  const response = await fetch(`${BASE_URL}/orders`);
+  const response = await fetch(`${BASE_URL}/orders/`);
   if (!response.ok) {
     throw new Error(`Erreur HTTP: ${response.status}`);
   }
@@ -11,6 +11,14 @@ export const fetchOrders = async () => {
 
 export const fetchOrderDetail = async (id) => {
   const response = await fetch(`${BASE_URL}/orders/${id}`);
+  if (!response.ok) {
+    throw new Error(`Erreur HTTP: ${response.status}`);
+  }
+  return response.json();
+};
+
+export const refreshOrders = async () => {
+  const response = await fetch(`${BASE_URL}/orders/refresh`, { method: 'POST' });
   if (!response.ok) {
     throw new Error(`Erreur HTTP: ${response.status}`);
   }
