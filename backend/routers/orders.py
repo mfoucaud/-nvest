@@ -265,6 +265,95 @@ def create_order(body: OrderIn, db: Session = Depends(get_db)) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# POST /api/orders/refresh  — doit être avant GET /{id_ordre} (route statique > dynamique)
+# ---------------------------------------------------------------------------
+
+@router.post("/refresh", summary="Rafraîchit tous les prix + clôtures automatiques")
+def refresh_prices(db: Session = Depends(get_db)) -> dict:
+    try:
+        import yfinance as yf
+    except ImportError:
+        raise HTTPException(500, detail="yfinance non installé.")
+
+    import os
+    capital_depart = float(os.getenv("CAPITAL_DEPART", "10000"))
+    today_str = date.today()
+    updated = []
+    closed  = []
+    errors  = []
+
+    ouverts = db.query(Order).filter(Order.statut == "OUVERT").all()
+
+    for order in ouverts:
+        try:
+            hist = yf.Ticker(order.actif).history(period="2d", interval="1d")
+            if hist.empty:
+                raise ValueError("Pas de données")
+            prix = round(float(hist["Close"].iloc[-1]), 4)
+        except Exception as e:
+            errors.append({"actif": order.actif, "erreur": str(e)})
+            continue
+
+        sl     = order.stop_loss
+        tp     = order.take_profit
+        expiry = order.date_expiration
+        qty    = order.quantite_fictive or 0
+
+        if prix <= sl:
+            statut, exit_price = "CLOTURE_PERDANT", sl
+        elif prix >= tp:
+            statut, exit_price = "CLOTURE_GAGNANT", tp
+        elif expiry and expiry <= today_str:
+            statut, exit_price = "EXPIRE", prix
+        else:
+            statut, exit_price = "OUVERT", None
+
+        pnl = round((prix - order.prix_entree) * qty, 2)
+
+        if statut != "OUVERT":
+            exit_pnl = round((exit_price - order.prix_entree) * qty, 2)
+            order.statut       = statut
+            order.prix_actuel  = exit_price
+            order.prix_sortie  = exit_price
+            order.pnl_latent   = exit_pnl
+            order.date_cloture = today_str
+
+            decision = db.query(Decision).filter(Decision.id_ordre == order.id_ordre).first()
+            if decision and not decision.statut_final:
+                decision.date_cloture       = today_str
+                decision.statut_final       = statut
+                decision.pnl_euros          = f"{exit_pnl:+.2f}"
+                decision.commentaire_retour = f"Clôture automatique (prix={prix})."
+
+            closed.append({"id_ordre": order.id_ordre, "actif": order.actif, "statut": statut, "pnl": exit_pnl})
+        else:
+            order.prix_actuel = prix
+            order.pnl_latent  = pnl
+            updated.append({"id_ordre": order.id_ordre, "actif": order.actif, "prix": prix, "pnl_latent": pnl})
+
+    if closed:
+        pnl_realise = sum(
+            o.pnl_latent or 0
+            for o in db.query(Order).filter(Order.statut != "OUVERT").all()
+        )
+        db.add(CapitalHistory(
+            date=today_str,
+            capital=round(capital_depart + pnl_realise, 2),
+            note=f"Refresh auto: {len(closed)} cloture(s).",
+        ))
+
+    db.flush()
+
+    return {
+        "date":       today_str.isoformat(),
+        "mis_a_jour": updated,
+        "clotures":   closed,
+        "erreurs":    errors,
+        "metriques":  _calc_metrics(db),
+    }
+
+
+# ---------------------------------------------------------------------------
 # GET /api/orders/{id_ordre}
 # ---------------------------------------------------------------------------
 
@@ -351,92 +440,3 @@ def close_order(id_ordre: str, body: CloseOrder, db: Session = Depends(get_db)) 
 
     db.flush()
     return {"id_ordre": id_ordre, "statut": body.statut, "pnl": pnl, "exit_price": exit_price}
-
-
-# ---------------------------------------------------------------------------
-# POST /api/orders/refresh
-# ---------------------------------------------------------------------------
-
-@router.post("/refresh", summary="Rafraîchit tous les prix + clôtures automatiques")
-def refresh_prices(db: Session = Depends(get_db)) -> dict:
-    try:
-        import yfinance as yf
-    except ImportError:
-        raise HTTPException(500, detail="yfinance non installé.")
-
-    import os
-    capital_depart = float(os.getenv("CAPITAL_DEPART", "10000"))
-    today_str = date.today()
-    updated = []
-    closed  = []
-    errors  = []
-
-    ouverts = db.query(Order).filter(Order.statut == "OUVERT").all()
-
-    for order in ouverts:
-        try:
-            hist = yf.Ticker(order.actif).history(period="2d", interval="1d")
-            if hist.empty:
-                raise ValueError("Pas de données")
-            prix = round(float(hist["Close"].iloc[-1]), 4)
-        except Exception as e:
-            errors.append({"actif": order.actif, "erreur": str(e)})
-            continue
-
-        sl     = order.stop_loss
-        tp     = order.take_profit
-        expiry = order.date_expiration
-        qty    = order.quantite_fictive or 0
-
-        if prix <= sl:
-            statut, exit_price = "CLOTURE_PERDANT", sl
-        elif prix >= tp:
-            statut, exit_price = "CLOTURE_GAGNANT", tp
-        elif expiry and expiry <= today_str:
-            statut, exit_price = "EXPIRE", prix
-        else:
-            statut, exit_price = "OUVERT", None
-
-        pnl = round((prix - order.prix_entree) * qty, 2)
-
-        if statut != "OUVERT":
-            exit_pnl = round((exit_price - order.prix_entree) * qty, 2)
-            order.statut       = statut
-            order.prix_actuel  = exit_price
-            order.prix_sortie  = exit_price
-            order.pnl_latent   = exit_pnl
-            order.date_cloture = today_str
-
-            decision = db.query(Decision).filter(Decision.id_ordre == order.id_ordre).first()
-            if decision and not decision.statut_final:
-                decision.date_cloture       = today_str
-                decision.statut_final       = statut
-                decision.pnl_euros          = f"{exit_pnl:+.2f}"
-                decision.commentaire_retour = f"Clôture automatique (prix={prix})."
-
-            closed.append({"id_ordre": order.id_ordre, "actif": order.actif, "statut": statut, "pnl": exit_pnl})
-        else:
-            order.prix_actuel = prix
-            order.pnl_latent  = pnl
-            updated.append({"id_ordre": order.id_ordre, "actif": order.actif, "prix": prix, "pnl_latent": pnl})
-
-    if closed:
-        pnl_realise = sum(
-            o.pnl_latent or 0
-            for o in db.query(Order).filter(Order.statut != "OUVERT").all()
-        )
-        db.add(CapitalHistory(
-            date=today_str,
-            capital=round(capital_depart + pnl_realise, 2),
-            note=f"Refresh auto: {len(closed)} cloture(s).",
-        ))
-
-    db.flush()
-
-    return {
-        "date":       today_str.isoformat(),
-        "mis_a_jour": updated,
-        "clotures":   closed,
-        "erreurs":    errors,
-        "metriques":  _calc_metrics(db),
-    }
