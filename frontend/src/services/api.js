@@ -25,6 +25,18 @@ export const refreshOrders = async () => {
   return response.json();
 };
 
+export const runScan = async () => {
+  const response = await fetch(`${BASE_URL}/scan/run`, { method: 'POST' });
+  if (!response.ok) throw new Error(`Erreur HTTP: ${response.status}`);
+  return response.json();
+};
+
+export const fetchScanStatus = async () => {
+  const response = await fetch(`${BASE_URL}/scan/status`);
+  if (!response.ok) throw new Error(`Erreur HTTP: ${response.status}`);
+  return response.json();
+};
+
 export const fetchPriceHistory = async (ticker, days = 10) => {
   const response = await fetch(`${BASE_URL}/prices/${ticker}?days=${days}`);
   if (!response.ok) {

@@ -4,9 +4,11 @@ import MetricsBar from '../components/dashboard/MetricsBar';
 import CapitalChart from '../components/dashboard/CapitalChart';
 import OrdersTable from '../components/dashboard/OrdersTable';
 import useOrders from '../hooks/useOrders';
+import useScan from '../hooks/useScan';
 
 const Dashboard = () => {
   const { data, loading, error, refetch } = useOrders();
+  const { status: scanStatus, running: scanRunning, error: scanError, launch: launchScan, todayDone } = useScan(refetch);
 
   const metriques = data?.metriques || null;
   const historiqueCapital = data?.historique_capital || [];
@@ -22,14 +24,33 @@ const Dashboard = () => {
           <span style={styles.lastUpdate}>
             {data && !loading ? `Dernière mise à jour : ${metriques?.derniere_mise_a_jour || '—'}` : ''}
           </span>
-          <button
-            style={{ ...styles.refreshBtn, opacity: loading ? 0.6 : 1 }}
-            onClick={refetch}
-            disabled={loading}
-            title="Actualiser les ordres"
-          >
-            {loading ? '⟳ Chargement...' : '⟳ Actualiser les ordres'}
-          </button>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            {scanRunning && (
+              <span style={styles.scanStatus}>Scan en cours…</span>
+            )}
+            {!scanRunning && scanStatus && scanStatus.status === 'termine' && scanStatus.started_at?.slice(0, 10) === new Date().toISOString().slice(0, 10) && (
+              <span style={styles.scanStatus}>
+                Scan du jour : {scanStatus.nb_ordres_generes} ordre(s) sur {scanStatus.nb_candidats} candidat(s)
+              </span>
+            )}
+            {scanError && <span style={{ ...styles.scanStatus, color: 'var(--red)' }}>{scanError}</span>}
+            <button
+              style={{ ...styles.scanBtn, opacity: (scanRunning || todayDone) ? 0.5 : 1 }}
+              onClick={launchScan}
+              disabled={scanRunning || todayDone}
+              title={todayDone ? 'Scan du jour déjà effectué (2 ordres générés)' : 'Lancer un scan de marché'}
+            >
+              {scanRunning ? '⟳ Scan...' : todayDone ? '✓ Scan fait' : '⚡ Lancer un scan'}
+            </button>
+            <button
+              style={{ ...styles.refreshBtn, opacity: loading ? 0.6 : 1 }}
+              onClick={refetch}
+              disabled={loading}
+              title="Actualiser les ordres"
+            >
+              {loading ? '⟳ Chargement...' : '⟳ Actualiser'}
+            </button>
+          </div>
         </div>
 
         {loading && (
@@ -150,6 +171,24 @@ const styles = {
     border: '1px solid var(--border)',
     borderRadius: '12px',
     fontSize: '0.875rem',
+  },
+  scanBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.4rem',
+    padding: '0.5rem 1rem',
+    borderRadius: '8px',
+    border: '1px solid rgba(108, 99, 255, 0.4)',
+    backgroundColor: 'rgba(108, 99, 255, 0.15)',
+    color: 'var(--accent)',
+    fontSize: '0.8rem',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'background-color 0.15s, border-color 0.15s',
+  },
+  scanStatus: {
+    fontSize: '0.75rem',
+    color: 'var(--text2)',
   },
   badge: {
     display: 'inline-block',
