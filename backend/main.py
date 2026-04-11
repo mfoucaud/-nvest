@@ -14,11 +14,40 @@ from backend.routers.scan import router as scan_router
 from backend.services.scheduler import scheduler
 
 
+def _startup_refresh() -> None:
+    """Au boot, clôture les ordres expirés/TP/SL sans attendre le scheduler."""
+    from datetime import date
+    from backend.database import SessionLocal
+    from backend.models import Order
+    try:
+        db = SessionLocal()
+        today = date.today()
+        expired = db.query(Order).filter(
+            Order.statut == "OUVERT",
+            Order.date_expiration < today,
+        ).count()
+        db.close()
+        if expired > 0:
+            print(f"[startup] {expired} ordre(s) expiré(s) détecté(s) — refresh automatique")
+            from backend.routers.orders import refresh_prices
+            db2 = SessionLocal()
+            try:
+                refresh_prices(db=db2)
+                db2.commit()
+            finally:
+                db2.close()
+        else:
+            print("[startup] Aucun ordre expiré — pas de refresh nécessaire")
+    except Exception as e:
+        print(f"[startup] Refresh échoué (non bloquant) : {e}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Démarre le scheduler au démarrage, l'arrête à la fermeture."""
+    _startup_refresh()
     scheduler.start()
-    print("[scheduler] APScheduler démarré — scan quotidien à 9h (Europe/Paris)")
+    print("[scheduler] APScheduler démarré — scan quotidien à 14h30 (Europe/Paris)")
     yield
     scheduler.shutdown(wait=False)
     print("[scheduler] APScheduler arrêté")
