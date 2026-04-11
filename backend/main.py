@@ -45,6 +45,34 @@ def _startup_refresh() -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Démarre le scheduler au démarrage, l'arrête à la fermeture."""
+    # Créer les tables si elles n'existent pas (fallback si alembic a échoué)
+    from backend.database import engine, Base
+    import backend.models  # noqa: F401 — ensure all models are registered
+    try:
+        Base.metadata.create_all(bind=engine)
+        print("[startup] Tables DB vérifiées/créées via create_all")
+    except Exception as e:
+        print(f"[startup] create_all échoué : {e}")
+
+    # Migrer les données JSON → PG si nécessaire
+    try:
+        from backend.database import SessionLocal
+        from backend.models import Order
+        db = SessionLocal()
+        count = db.query(Order).count()
+        db.close()
+        if count == 0:
+            print("[startup] Table orders vide — migration JSON→PG")
+            from backend.scripts.migrate_json_to_pg import migrate
+            db2 = SessionLocal()
+            try:
+                migrate(db2, commit=True)
+                print("[startup] Migration JSON→PG terminée")
+            finally:
+                db2.close()
+    except Exception as e:
+        print(f"[startup] Migration JSON→PG échouée : {e}")
+
     _startup_refresh()
     scheduler.start()
     print("[scheduler] APScheduler démarré — scan quotidien à 14h30 (Europe/Paris)")
