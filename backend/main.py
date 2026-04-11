@@ -82,3 +82,18 @@ app.include_router(scan_router, prefix="/api")
 @app.get("/api/health", tags=["health"])
 def health_check() -> dict:
     return {"status": "ok", "version": "2.0.0"}
+
+
+@app.get("/api/debug/db", tags=["debug"])
+def debug_db() -> dict:
+    import os
+    raw = os.getenv("DATABASE_URL", "NOT_SET")
+    masked = raw[:30] + "..." if len(raw) > 30 else raw
+    try:
+        from backend.database import engine
+        with engine.connect() as conn:
+            from sqlalchemy import text
+            result = conn.execute(text("SELECT 1")).fetchone()
+            return {"db_url_prefix": masked, "connection": "ok", "result": str(result)}
+    except Exception as e:
+        return {"db_url_prefix": masked, "connection": "error", "error": str(e)}
