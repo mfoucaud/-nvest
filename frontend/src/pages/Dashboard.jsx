@@ -50,17 +50,49 @@ const Dashboard = () => {
             <MetricsBar metriques={metriques} />
             <CapitalChart data={historiqueCapital} />
 
-            <h2 style={styles.sectionTitle}>Positions Ouvertes</h2>
-            <OrdersTable orders={ouverts} />
+            <h2 style={styles.sectionTitle}>
+              Positions Ouvertes
+              {ouverts.length > 0 && <span style={styles.badge}>{ouverts.length}</span>}
+            </h2>
+            <OrdersTable orders={ouverts} closed={false} />
 
-            <h2 style={styles.sectionTitle}>Historique des Trades</h2>
-            {clotures.length === 0 ? (
-              <div style={styles.emptyHistory}>
-                Aucun trade clôturé pour le moment.
-              </div>
-            ) : (
-              <OrdersTable orders={clotures} />
-            )}
+            {(() => {
+              const clotureGagnant = clotures.filter(o => o.statut === 'CLOTURE_GAGNANT');
+              const cloturePerdant = clotures.filter(o => o.statut === 'CLOTURE_PERDANT');
+              const expires = clotures.filter(o => o.statut === 'EXPIRE');
+
+              if (clotures.length === 0) return (
+                <div style={styles.emptyHistory}>Aucun trade clôturé pour le moment.</div>
+              );
+
+              return (
+                <>
+                  {(clotureGagnant.length > 0 || cloturePerdant.length > 0) && (
+                    <>
+                      <h2 style={styles.sectionTitle}>
+                        Trades Clôturés
+                        <span style={{ ...styles.badge, backgroundColor: 'rgba(0,196,140,0.15)', color: 'var(--green)' }}>
+                          {clotureGagnant.length}W
+                        </span>
+                        <span style={{ ...styles.badge, backgroundColor: 'rgba(255,77,109,0.15)', color: 'var(--red)', marginLeft: '0.25rem' }}>
+                          {cloturePerdant.length}L
+                        </span>
+                      </h2>
+                      <OrdersTable orders={[...clotureGagnant, ...cloturePerdant]} closed={true} />
+                    </>
+                  )}
+                  {expires.length > 0 && (
+                    <>
+                      <h2 style={styles.sectionTitle}>
+                        Expirés
+                        <span style={styles.badge}>{expires.length}</span>
+                      </h2>
+                      <OrdersTable orders={expires} closed={true} />
+                    </>
+                  )}
+                </>
+              );
+            })()}
           </>
         )}
       </main>
@@ -118,6 +150,17 @@ const styles = {
     border: '1px solid var(--border)',
     borderRadius: '12px',
     fontSize: '0.875rem',
+  },
+  badge: {
+    display: 'inline-block',
+    marginLeft: '0.5rem',
+    padding: '0.1rem 0.5rem',
+    borderRadius: '10px',
+    fontSize: '0.65rem',
+    fontWeight: '700',
+    backgroundColor: 'var(--bg3)',
+    color: 'var(--text2)',
+    verticalAlign: 'middle',
   },
 };
 

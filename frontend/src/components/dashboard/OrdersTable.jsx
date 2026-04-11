@@ -93,15 +93,21 @@ const PnlCell = ({ value }) => {
   );
 };
 
-const OrdersTable = ({ orders }) => {
+const RaisonCell = ({ raison }) => {
+  if (!raison) return <td style={styles.td}>—</td>;
+  const short = raison.length > 60 ? raison.slice(0, 60) + '…' : raison;
+  return (
+    <td style={{ ...styles.td, color: 'var(--text2)', fontSize: '0.78rem', maxWidth: '200px' }} title={raison}>
+      {short}
+    </td>
+  );
+};
+
+const OrdersTable = ({ orders, closed = false }) => {
   const navigate = useNavigate();
 
   if (!orders || orders.length === 0) {
-    return (
-      <div style={styles.empty}>
-        Aucune position à afficher.
-      </div>
-    );
+    return <div style={styles.empty}>Aucune position à afficher.</div>;
   }
 
   return (
@@ -114,12 +120,19 @@ const OrdersTable = ({ orders }) => {
             <th style={styles.th}>Classe</th>
             <th style={styles.th}>Direction</th>
             <th style={styles.th}>Entrée</th>
-            <th style={styles.th}>Actuel</th>
-            <th style={styles.th}>SL</th>
-            <th style={styles.th}>TP</th>
-            <th style={styles.th}>P&L Latent</th>
+            {closed ? (
+              <th style={styles.th}>Sortie</th>
+            ) : (
+              <>
+                <th style={styles.th}>Actuel</th>
+                <th style={styles.th}>SL</th>
+                <th style={styles.th}>TP</th>
+              </>
+            )}
+            <th style={styles.th}>{closed ? 'P&L Réalisé' : 'P&L Latent'}</th>
             <th style={styles.th}>Conf.</th>
-            <th style={styles.th}>Expiration</th>
+            <th style={styles.th}>{closed ? 'Clôture' : 'Expiration'}</th>
+            <th style={styles.th}>Raison</th>
             <th style={styles.th}>Statut</th>
           </tr>
         </thead>
@@ -147,26 +160,31 @@ const OrdersTable = ({ orders }) => {
                 <DirectionBadge direction={order.direction} />
               </td>
               <td style={styles.td}>{formatNumber(order.prix_entree)}</td>
-              <td style={{ ...styles.td, color: 'var(--accent2)' }}>
-                {formatNumber(order.prix_actuel || order.cours_actuel)}
-              </td>
-              <td style={{ ...styles.td, color: 'var(--red)' }}>
-                {formatNumber(order.stop_loss)}
-              </td>
-              <td style={{ ...styles.td, color: 'var(--green)' }}>
-                {formatNumber(order.take_profit)}
-              </td>
+              {closed ? (
+                <td style={{ ...styles.td, color: 'var(--text2)' }}>
+                  {formatNumber(order.prix_sortie)}
+                </td>
+              ) : (
+                <>
+                  <td style={{ ...styles.td, color: 'var(--accent2)' }}>
+                    {formatNumber(order.prix_actuel || order.cours_actuel)}
+                  </td>
+                  <td style={{ ...styles.td, color: 'var(--red)' }}>
+                    {formatNumber(order.stop_loss)}
+                  </td>
+                  <td style={{ ...styles.td, color: 'var(--green)' }}>
+                    {formatNumber(order.take_profit)}
+                  </td>
+                </>
+              )}
               <PnlCell value={order.pnl_latent} />
               <td style={styles.td}>
-                {order.confiance !== undefined && order.confiance !== null
-                  ? `${order.confiance}%`
-                  : order.score_confiance !== undefined && order.score_confiance !== null
-                  ? `${order.score_confiance}/10`
-                  : '—'}
+                {order.confiance != null ? `${order.confiance}%` : '—'}
               </td>
               <td style={{ ...styles.td, color: 'var(--text2)' }}>
-                {formatDate(order.date_expiration || order.expiration)}
+                {formatDate(closed ? order.date_cloture : (order.date_expiration || order.expiration))}
               </td>
+              <RaisonCell raison={order.raison} />
               <td style={styles.td}>
                 <StatusBadge statut={order.statut} />
               </td>

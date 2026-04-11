@@ -26,24 +26,24 @@ const useOrders = () => {
         setLoading(true);
         setError(null);
         const result = await fetchOrders();
-        if (!cancelled) {
-          setData(result);
-        }
+        if (!cancelled) setData(result);
       } catch (err) {
-        if (!cancelled) {
-          setError(err.message || 'Erreur de connexion au serveur');
-        }
+        if (!cancelled) setError(err.message || 'Erreur de connexion au serveur');
       } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
+        if (!cancelled) setLoading(false);
       }
     };
 
     load();
 
+    // Auto-poll toutes les 3 minutes (GET uniquement, pas de refresh yfinance)
+    const interval = setInterval(() => {
+      if (!cancelled) load();
+    }, 3 * 60 * 1000);
+
     return () => {
       cancelled = true;
+      clearInterval(interval);
     };
   }, [tick]);
 
