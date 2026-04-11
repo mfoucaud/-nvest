@@ -331,6 +331,8 @@ def refresh_prices(db: Session = Depends(get_db)) -> dict:
             order.pnl_latent  = pnl
             updated.append({"id_ordre": order.id_ordre, "actif": order.actif, "prix": prix, "pnl_latent": pnl})
 
+    db.flush()  # flush d'abord pour que la query SQL voit les nouveaux statuts
+
     if closed:
         pnl_realise = sum(
             o.pnl_latent or 0
@@ -341,8 +343,7 @@ def refresh_prices(db: Session = Depends(get_db)) -> dict:
             capital=round(capital_depart + pnl_realise, 2),
             note=f"Refresh auto: {len(closed)} cloture(s).",
         ))
-
-    db.flush()
+        db.flush()
 
     return {
         "date":       today_str.isoformat(),

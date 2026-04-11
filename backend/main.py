@@ -14,6 +14,37 @@ from backend.routers.scan import router as scan_router
 from backend.services.scheduler import scheduler
 
 
+def _fix_capital_history() -> None:
+    """Recalcule et upsert l'entrée capital_history d'aujourd'hui depuis les ordres clôturés."""
+    import os
+    from datetime import date
+    from backend.database import SessionLocal
+    from backend.models import Order, CapitalHistory
+    try:
+        capital_depart = float(os.getenv("CAPITAL_DEPART", "10000"))
+        db = SessionLocal()
+        try:
+            today = date.today()
+            pnl_realise = sum(
+                o.pnl_latent or 0
+                for o in db.query(Order).filter(Order.statut != "OUVERT").all()
+            )
+            capital_correct = round(capital_depart + pnl_realise, 2)
+            # Supprimer l'entrée incorrecte d'aujourd'hui si elle existe
+            db.query(CapitalHistory).filter(CapitalHistory.date == today).delete()
+            db.add(CapitalHistory(
+                date=today,
+                capital=capital_correct,
+                note="Capital recalculé au démarrage",
+            ))
+            db.commit()
+            print(f"[startup] Capital history corrigé : {capital_correct} €")
+        finally:
+            db.close()
+    except Exception as e:
+        print(f"[startup] _fix_capital_history échoué : {e}")
+
+
 def _startup_refresh() -> None:
     """Au boot, clôture les ordres expirés/TP/SL sans attendre le scheduler."""
     from datetime import date
@@ -74,6 +105,7 @@ async def lifespan(app: FastAPI):
         print(f"[startup] Migration JSON→PG échouée : {e}")
 
     _startup_refresh()
+    _fix_capital_history()
     scheduler.start()
     print("[scheduler] APScheduler démarré — scan quotidien à 14h30 (Europe/Paris)")
     yield
