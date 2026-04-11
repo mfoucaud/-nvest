@@ -117,22 +117,26 @@ def debug_db() -> dict:
     import os
     raw = os.getenv("DATABASE_URL", "NOT_SET")
     masked = raw[:30] + "..." if len(raw) > 30 else raw
+    result: dict = {"db_url_prefix": masked}
     try:
-        from backend.database import engine
+        from backend.database import engine, Base
+        import backend.models  # noqa
         from sqlalchemy import text, inspect
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
-            insp = inspect(engine)
-            tables = insp.get_table_names()
-            # Try a quick query on orders table if it exists
-            orders_count = None
-            if "orders" in tables:
-                orders_count = conn.execute(text("SELECT COUNT(*) FROM orders")).scalar()
-            return {
-                "db_url_prefix": masked,
-                "connection": "ok",
-                "tables": tables,
-                "orders_count": orders_count,
-            }
+        result["connection"] = "ok"
+        # Try create_all
+        try:
+            Base.metadata.create_all(bind=engine)
+            result["create_all"] = "ok"
+        except Exception as e:
+            result["create_all"] = f"error: {e}"
+        insp = inspect(engine)
+        tables = insp.get_table_names()
+        result["tables"] = tables
+        if "orders" in tables:
+            with engine.connect() as conn:
+                result["orders_count"] = conn.execute(text("SELECT COUNT(*) FROM orders")).scalar()
     except Exception as e:
-        return {"db_url_prefix": masked, "connection": "error", "error": str(e)}
+        result["connection"] = f"error: {e}"
+    return result
