@@ -1,0 +1,263 @@
+[
+  {
+    "ticker": "META",
+    "price": 525.72,
+    "rsi": 18.0,
+    "atr": 18.9389,
+    "ema20": 608.2492,
+    "ema50": 629.7794,
+    "bb_low": 545.7156,
+    "score_technique": 65,
+    "signals": [
+      "RSI survente 18.0",
+      "Bollinger inf 545.72",
+      "Volume x1.7",
+      "Support ~520.26"
+    ]
+  },
+  {
+    "ticker": "AAPL",
+    "price": 248.8,
+    "rsi": 32.1,
+    "atr": 5.08,
+    "ema20": 254.9021,
+    "ema50": 258.5007,
+    "bb_low": 244.4843,
+    "score_technique": 50,
+    "signals": [
+      "RSI survente 32.1",
+      "Bollinger inf 244.48",
+      "Support ~246.00"
+    ]
+  },
+  {
+    "ticker": "MSFT",
+    "price": 356.77,
+    "rsi": 8.7,
+    "atr": 7.7129,
+    "ema20": 387.4414,
+    "ema50": 401.924,
+    "bb_low": 361.0597,
+    "score_technique": 50,
+    "signals": [
+      "RSI survente 8.7",
+      "Bollinger inf 361.06",
+      "Support ~356.51"
+    ]
+  },
+  {
+    "ticker": "NVDA",
+    "price": 167.52,
+    "rsi": 31.4,
+    "atr": 5.0414,
+    "ema20": 178.5348,
+    "ema50": 181.6891,
+    "bb_low": 169.7345,
+    "score_technique": 50,
+    "signals": [
+      "RSI survente 31.4",
+      "Bollinger inf 169.73",
+      "Support ~167.01"
+    ]
+  },
+  {
+    "ticker": "TSLA",
+    "price": 361.83,
+    "rsi": 32.8,
+    "atr": 12.6943,
+    "ema20": 388.6923,
+    "ema50": 400.9849,
+    "bb_low": 364.8878,
+    "score_technique": 50,
+    "signals": [
+      "RSI survente 32.8",
+      "Bollinger inf 364.89",
+      "Support ~359.47"
+    ]
+  },
+  {
+    "ticker": "GOOGL",
+    "price": 274.34,
+    "rsi": 22.0,
+    "atr": 6.9843,
+    "ema20": 299.0628,
+    "ema50": 307.1435,
+    "bb_low": 281.5928,
+    "score_technique": 50,
+    "signals": [
+      "RSI survente 22.0",
+      "Bollinger inf 281.59",
+      "Support ~273.95"
+    ]
+  },
+  {
+    "ticker": "AIR.PA",
+    "price": 160.42,
+    "rsi": 32.4,
+    "atr": 5.62,
+    "ema20": 170.8287,
+    "ema50": 179.5122,
+    "bb_low": 158.6447,
+    "score_technique": 50,
+    "signals": [
+      "RSI survente 32.4",
+      "Bollinger inf 158.64",
+      "Support ~157.88"
+    ]
+  },
+  {
+    "ticker": "SPY",
+    "price": 634.09,
+    "rsi": 23.6,
+    "atr": 9.6689,
+    "ema20": 661.5351,
+    "ema50": 671.5767,
+    "bb_low": 637.5577,
+    "score_technique": 50,
+    "signals": [
+      "RSI survente 23.6",
+      "Bollinger inf 637.56",
+      "Support ~633.11"
+    ]
+  },
+  {
+    "ticker": "QQQ",
+    "price": 562.58,
+    "rsi": 23.8,
+    "atr": 9.8762,
+    "ema20": 591.4749,
+    "ema50": 600.2925,
+    "bb_low": 569.8244,
+    "score_technique": 50,
+    "signals": [
+      "RSI survente 23.8",
+      "Bollinger inf 569.82",
+      "Support ~561.57"
+    ]
+  },
+  {
+    "ticker": "USDJPY=X",
+    "price": 159.704,
+    "rsi": 57.1,
+    "atr": 1.0992,
+    "ema20": 158.3263,
+    "ema50": 157.3756,
+    "bb_low": 156.6085,
+    "score_technique": 45,
+    "signals": [
+      "Bollinger inf 156.61",
+      "EMA20>EMA50",
+      "Support ~156.15"
+    ]
+  },
+  {
+    "ticker": "AMZN",
+    "price": 199.34,
+    "rsi": 35.7,
+    "atr": 5.1786,
+    "ema20": 209.5716,
+    "ema50": 213.9164,
+    "bb_low": 201.8017,
+    "score_technique": 30,
+    "signals": [
+      "Bollinger inf 201.80",
+      "Support ~199.14"
+    ]
+  },
+  {
+    "ticker": "BTC-USD",
+    "price": 66943.2578,
+    "rsi": 40.2,
+    "atr": 2676.3131,
+    "ema20": 69487.8576,
+    "ema50": 69630.4785,
+    "bb_low": 66048.7529,
+    "score_technique": 30,
+    "signals": [
+      "Bollinger inf 66048.75",
+      "Support ~65532.57"
+    ]
+  },
+  {
+    "ticker": "SOL-USD",
+    "price": 83.7416,
+    "rsi": 44.0,
+    "atr": 4.3466,
+    "ema20": 87.8077,
+    "ema50": 87.7698,
+    "bb_low": 81.6935,
+    "score_technique": 30,
+    "signals": [
+      "EMA20>EMA50",
+      "Support ~81.60"
+    ]
+  },
+  {
+    "ticker": "BNB-USD",
+    "price": 616.8843,
+    "rsi": 35.3,
+    "atr": 18.6166,
+    "ema20": 636.76,
+    "ema50": 641.0244,
+    "bb_low": 609.3467,
+    "score_technique": 30,
+    "signals": [
+      "Bollinger inf 609.35",
+      "Support ~606.01"
+    ]
+  },
+  {
+    "ticker": "EURUSD=X",
+    "price": 1.1535,
+    "rsi": 50.8,
+    "atr": 0.0096,
+    "ema20": 1.1596,
+    "ema50": 1.1662,
+    "bb_low": 1.1425,
+    "score_technique": 30,
+    "signals": [
+      "Bollinger inf 1.14",
+      "Support ~1.14"
+    ]
+  },
+  {
+    "ticker": "GBPUSD=X",
+    "price": 1.3261,
+    "rsi": 40.8,
+    "atr": 0.0111,
+    "ema20": 1.3376,
+    "ema50": 1.3435,
+    "bb_low": 1.3243,
+    "score_technique": 30,
+    "signals": [
+      "Bollinger inf 1.32",
+      "Support ~1.32"
+    ]
+  },
+  {
+    "ticker": "TTE.PA",
+    "price": 78.49,
+    "rsi": 78.3,
+    "atr": 2.125,
+    "ema20": 73.5438,
+    "ema50": 69.2959,
+    "bb_low": 64.1271,
+    "score_technique": 15,
+    "signals": [
+      "EMA20>EMA50"
+    ]
+  },
+  {
+    "ticker": "ETH-USD",
+    "price": 2024.2372,
+    "rsi": 45.9,
+    "atr": 112.8509,
+    "ema20": 2093.6131,
+    "ema50": 2083.6303,
+    "bb_low": 1925.7921,
+    "score_technique": 15,
+    "signals": [
+      "EMA20>EMA50"
+    ]
+  }
+]

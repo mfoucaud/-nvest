@@ -1,0 +1,1 @@
+- generic [ref=e2]: "{\"db_url_prefix\":\"postgresql://nvest_db_user:qKl...\",\"connection\":\"ok\",\"create_all\":\"ok\",\"tables\":[\"capital_history\",\"scan_runs\",\"orders\",\"decisions\"],\"orders_count\":12}"

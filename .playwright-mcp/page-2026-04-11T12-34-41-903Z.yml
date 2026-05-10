@@ -1,0 +1,12 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e7]: 📈 Trading Fictif
+        - generic [ref=e8]: samedi 11 avril 2026
+      - generic [ref=e9]:
+        - generic [ref=e10]: Capital
+        - generic [ref=e11]: —
+  - main [ref=e12]:
+    - button "⟳ Chargement..." [disabled] [ref=e14] [cursor=pointer]
+    - generic [ref=e17]: Chargement du portfolio...
