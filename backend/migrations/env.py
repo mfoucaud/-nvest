@@ -9,7 +9,7 @@ from alembic import context
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from backend.database import Base
-from backend.models import Order, Decision, CapitalHistory, ScanRun  # noqa: F401
+from backend.models import Decision, ScanRun  # noqa: F401
 
 config = context.config
 if config.config_file_name is not None:
