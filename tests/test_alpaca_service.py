@@ -6,6 +6,7 @@ os.environ.setdefault("ALPACA_API_KEY", "test-key")
 os.environ.setdefault("ALPACA_SECRET_KEY", "test-secret")
 
 import backend.services.alpaca_service as alpaca_service
+from alpaca.trading.enums import OrderSide
 
 
 def test_get_account_returns_equity():
@@ -78,4 +79,72 @@ def test_get_portfolio_history_returns_formatted_list():
         assert len(result) == 1
         assert result[0]["capital"] == 10500.0
         assert "date" in result[0]
+        assert result[0]["date"] == "2025-01-01"
         assert result[0]["note"] is None
+
+
+def test_submit_bracket_order():
+    with patch("backend.services.alpaca_service.TradingClient") as MockClient:
+        mock_order = MagicMock()
+        mock_order.id = "alpaca-order-abc123"
+        MockClient.return_value.submit_order.return_value = mock_order
+
+        order_id = alpaca_service.submit_bracket_order("AAPL", qty=6.67, side="ACHAT", tp=165.0, sl=140.0)
+
+        assert order_id == "alpaca-order-abc123"
+        MockClient.return_value.submit_order.assert_called_once()
+
+
+def test_submit_bracket_order_sell():
+    with patch("backend.services.alpaca_service.TradingClient") as MockClient:
+        mock_order = MagicMock()
+        mock_order.id = "alpaca-order-sell-001"
+        MockClient.return_value.submit_order.return_value = mock_order
+
+        alpaca_service.submit_bracket_order("TSLA", qty=2.0, side="VENTE", tp=100.0, sl=200.0)
+
+        call_args = MockClient.return_value.submit_order.call_args
+        submitted = call_args.kwargs.get("order_data") or call_args.args[0]
+        assert submitted.side == OrderSide.SELL
+
+
+def test_get_closed_orders_empty():
+    with patch("backend.services.alpaca_service.TradingClient") as MockClient:
+        MockClient.return_value.get_orders.return_value = []
+
+        result = alpaca_service.get_closed_orders()
+        assert result == []
+
+
+def test_get_closed_orders_bracket_gagnant():
+    with patch("backend.services.alpaca_service.TradingClient") as MockClient:
+        # Simuler un ordre bracket avec la jambe TP remplie
+        tp_leg = MagicMock()
+        tp_leg.status = "OrderStatus.FILLED"
+        tp_leg.type = "OrderType.LIMIT"
+        tp_leg.filled_avg_price = "165.0"
+
+        sl_leg = MagicMock()
+        sl_leg.status = "OrderStatus.CANCELED"
+        sl_leg.type = "OrderType.STOP"
+        sl_leg.filled_avg_price = None
+
+        order = MagicMock()
+        order.id = "order-uuid-001"
+        order.symbol = "AAPL"
+        order.order_class = "OrderClass.BRACKET"
+        order.status = "OrderStatus.FILLED"
+        order.side = "OrderSide.BUY"
+        order.qty = "6.67"
+        order.filled_avg_price = "150.0"
+        order.filled_at = None
+        order.created_at = None
+        order.legs = [tp_leg, sl_leg]
+
+        MockClient.return_value.get_orders.return_value = [order]
+
+        result = alpaca_service.get_closed_orders()
+
+        assert len(result) == 1
+        assert result[0]["statut"] == "CLOTURE_GAGNANT"
+        assert result[0]["prix_sortie"] == 165.0
