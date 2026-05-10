@@ -148,3 +148,93 @@ def test_get_closed_orders_bracket_gagnant():
         assert len(result) == 1
         assert result[0]["statut"] == "CLOTURE_GAGNANT"
         assert result[0]["prix_sortie"] == 165.0
+        assert result[0]["prix_entree"] == 150.0
+
+
+def test_get_closed_orders_bracket_perdant():
+    with patch("backend.services.alpaca_service.TradingClient") as MockClient:
+        sl_leg = MagicMock()
+        sl_leg.status = "OrderStatus.FILLED"
+        sl_leg.type = "OrderType.STOP"
+        sl_leg.filled_avg_price = "140.0"
+
+        tp_leg = MagicMock()
+        tp_leg.status = "OrderStatus.CANCELED"
+        tp_leg.type = "OrderType.LIMIT"
+        tp_leg.filled_avg_price = None
+
+        order = MagicMock()
+        order.id = "order-uuid-002"
+        order.symbol = "TSLA"
+        order.order_class = "OrderClass.BRACKET"
+        order.status = "OrderStatus.FILLED"
+        order.side = "OrderSide.BUY"
+        order.qty = "5.0"
+        order.filled_avg_price = "155.0"
+        order.filled_at = None
+        order.created_at = None
+        order.legs = [sl_leg, tp_leg]
+
+        MockClient.return_value.get_orders.return_value = [order]
+
+        result = alpaca_service.get_closed_orders()
+
+        assert len(result) == 1
+        assert result[0]["statut"] == "CLOTURE_PERDANT"
+        assert result[0]["prix_sortie"] == 140.0
+        assert result[0]["prix_entree"] == 155.0
+
+
+def test_get_closed_orders_bracket_expire():
+    with patch("backend.services.alpaca_service.TradingClient") as MockClient:
+        leg1 = MagicMock()
+        leg1.status = "OrderStatus.CANCELED"
+        leg1.type = "OrderType.LIMIT"
+        leg1.filled_avg_price = None
+
+        leg2 = MagicMock()
+        leg2.status = "OrderStatus.CANCELED"
+        leg2.type = "OrderType.STOP"
+        leg2.filled_avg_price = None
+
+        order = MagicMock()
+        order.id = "order-uuid-003"
+        order.symbol = "NVDA"
+        order.order_class = "OrderClass.BRACKET"
+        order.status = "OrderStatus.CANCELED"
+        order.side = "OrderSide.BUY"
+        order.qty = "3.0"
+        order.filled_avg_price = None
+        order.filled_at = None
+        order.created_at = None
+        order.legs = [leg1, leg2]
+
+        MockClient.return_value.get_orders.return_value = [order]
+
+        result = alpaca_service.get_closed_orders()
+
+        assert len(result) == 1
+        assert result[0]["statut"] == "EXPIRE"
+
+
+def test_get_closed_orders_simple_filled():
+    with patch("backend.services.alpaca_service.TradingClient") as MockClient:
+        order = MagicMock()
+        order.id = "order-simple-001"
+        order.symbol = "MSFT"
+        order.order_class = "OrderClass.SIMPLE"
+        order.status = "OrderStatus.FILLED"
+        order.side = "OrderSide.BUY"
+        order.qty = "4.0"
+        order.filled_avg_price = "400.0"
+        order.filled_at = None
+        order.created_at = None
+        order.legs = None
+
+        MockClient.return_value.get_orders.return_value = [order]
+
+        result = alpaca_service.get_closed_orders()
+
+        assert len(result) == 1
+        assert result[0]["statut"] == "CLOTURE_GAGNANT"
+        assert result[0]["prix_entree"] == 400.0

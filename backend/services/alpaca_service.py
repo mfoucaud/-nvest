@@ -184,7 +184,7 @@ def get_closed_orders(limit: int = 50) -> list[dict]:
             "alerte": None,
             "date_ouverture": order.created_at.isoformat() if order.created_at else None,
             "date_expiration": None,
-            "date_cloture": order.filled_at.isoformat()[:10] if order.filled_at else None,
+            "date_cloture": order.filled_at.strftime("%Y-%m-%d") if order.filled_at else None,
         })
     return result
 
@@ -202,7 +202,12 @@ def submit_bracket_order(
     Retourne l'ID Alpaca de l'ordre parent (UUID str).
     """
     client = _get_client()
-    order_side = OrderSide.BUY if side == "ACHAT" else OrderSide.SELL
+    if side == "ACHAT":
+        order_side = OrderSide.BUY
+    elif side == "VENTE":
+        order_side = OrderSide.SELL
+    else:
+        raise ValueError(f"side doit être 'ACHAT' ou 'VENTE', reçu: {side!r}")
     request = MarketOrderRequest(
         symbol=ticker,
         qty=round(qty, 4),
