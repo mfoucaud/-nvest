@@ -1,10 +1,11 @@
 """test_alpaca_service.py — Tests pour alpaca_service (TradingClient mocké)."""
 import os
-import pytest
 from unittest.mock import MagicMock, patch
 
 os.environ.setdefault("ALPACA_API_KEY", "test-key")
 os.environ.setdefault("ALPACA_SECRET_KEY", "test-secret")
+
+import backend.services.alpaca_service as alpaca_service
 
 
 def test_get_account_returns_equity():
@@ -15,8 +16,7 @@ def test_get_account_returns_equity():
         mock_account.currency = "USD"
         MockClient.return_value.get_account.return_value = mock_account
 
-        from backend.services.alpaca_service import get_account
-        result = get_account()
+        result = alpaca_service.get_account()
 
         assert result["equity"] == 10500.0
         assert result["buying_power"] == 9500.0
