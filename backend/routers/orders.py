@@ -9,7 +9,7 @@ Endpoints :
 import os
 from datetime import date
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from backend.database import get_db
@@ -19,6 +19,7 @@ from backend.services import alpaca_service
 router = APIRouter(prefix="/orders", tags=["orders"])
 
 CAPITAL_DEPART = float(os.getenv("CAPITAL_DEPART", "10000"))
+SCAN_MAX_POSITIONS = int(os.getenv("SCAN_MAX_POSITIONS", "20"))
 
 
 def _enrich_positions_from_db(positions: list[dict], db: Session) -> list[dict]:
@@ -79,7 +80,7 @@ def _compute_metrics(positions: list[dict], closed: list[dict], equity: float) -
     nb_clos  = len(closed)
 
     pnl_realise = sum(o["pnl_latent"] or 0 for o in closed if o["pnl_latent"] is not None)
-    pnl_latent  = sum(p["pnl_latent"] for p in positions)
+    pnl_latent  = sum(p.get("pnl_latent") or 0 for p in positions)
     gains  = sum(o["pnl_latent"] or 0 for o in gagnants if o["pnl_latent"])
     pertes = abs(sum(o["pnl_latent"] or 0 for o in perdants if o["pnl_latent"]))
 
@@ -91,7 +92,7 @@ def _compute_metrics(positions: list[dict], closed: list[dict], equity: float) -
         "profit_factor":       round(gains / pertes, 2) if pertes > 0 else None,
         "nb_trades_total":     nb_clos + len(positions),
         "nb_trades_ouverts":   len(positions),
-        "max_positions":       int(os.getenv("SCAN_MAX_POSITIONS", "20")),
+        "max_positions":       SCAN_MAX_POSITIONS,
         "nb_trades_gagnants":  len(gagnants),
         "nb_trades_perdants":  len(perdants),
         "nb_trades_expires":   len(expires),
@@ -99,6 +100,30 @@ def _compute_metrics(positions: list[dict], closed: list[dict], equity: float) -
         "pire_trade":          min((o["pnl_latent"] for o in closed if o["pnl_latent"]), default=None),
         "capital_actuel":      round(equity, 2),
         "derniere_mise_a_jour": date.today().isoformat(),
+    }
+
+
+def _decision_to_dict(decision: Decision | None) -> dict | None:
+    if decision is None:
+        return None
+    cloture = None
+    if decision.statut_final:
+        cloture = {
+            "date_cloture": decision.date_cloture.isoformat() if decision.date_cloture else None,
+            "statut_final": decision.statut_final,
+            "pnl_euros": decision.pnl_euros,
+            "commentaire_retour": decision.commentaire_retour,
+        }
+    return {
+        "id_ordre": decision.id_ordre,
+        "signaux_techniques": decision.signaux_techniques,
+        "contexte_actualite": decision.contexte_actualite,
+        "sentiment_communaute": decision.sentiment_communaute,
+        "risques_identifies": decision.risques_identifies,
+        "conclusion": decision.conclusion,
+        "score_confiance": decision.score_confiance,
+        "detail_score": decision.detail_score,
+        "cloture": cloture,
     }
 
 
@@ -137,8 +162,8 @@ def get_order(id_ordre: str, db: Session = Depends(get_db)) -> dict:
             if pos.get("id_ordre") == id_ordre or pos.get("actif") == id_ordre:
                 pos["decision"] = _decision_to_dict(decision)
                 return pos
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[orders] get_positions failed for {id_ordre}: {e}")
 
     # Chercher dans les ordres clôturés
     try:
@@ -147,8 +172,8 @@ def get_order(id_ordre: str, db: Session = Depends(get_db)) -> dict:
             if order["id_ordre"] == id_ordre:
                 order["decision"] = _decision_to_dict(decision)
                 return order
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[orders] get_closed_orders failed for {id_ordre}: {e}")
 
     if decision:
         return {
@@ -165,29 +190,4 @@ def get_order(id_ordre: str, db: Session = Depends(get_db)) -> dict:
             "decision": _decision_to_dict(decision),
         }
 
-    from fastapi import HTTPException
     raise HTTPException(404, detail=f"Ordre '{id_ordre}' introuvable.")
-
-
-def _decision_to_dict(decision: Decision | None) -> dict | None:
-    if decision is None:
-        return None
-    cloture = None
-    if decision.statut_final:
-        cloture = {
-            "date_cloture": decision.date_cloture.isoformat() if decision.date_cloture else None,
-            "statut_final": decision.statut_final,
-            "pnl_euros": decision.pnl_euros,
-            "commentaire_retour": decision.commentaire_retour,
-        }
-    return {
-        "id_ordre": decision.id_ordre,
-        "signaux_techniques": decision.signaux_techniques,
-        "contexte_actualite": decision.contexte_actualite,
-        "sentiment_communaute": decision.sentiment_communaute,
-        "risques_identifies": decision.risques_identifies,
-        "conclusion": decision.conclusion,
-        "score_confiance": decision.score_confiance,
-        "detail_score": decision.detail_score,
-        "cloture": cloture,
-    }
