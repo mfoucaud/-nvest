@@ -2,7 +2,7 @@
 alpaca_service.py — Client Alpaca Paper Trading centralisé.
 """
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
 from alpaca.trading.client import TradingClient
 from alpaca.trading.requests import GetPortfolioHistoryRequest
@@ -15,13 +15,6 @@ def _get_client() -> TradingClient:
         secret_key=os.environ["ALPACA_SECRET_KEY"],
         paper=True,
     )
-
-
-_ASSET_CLASS_MAP = {
-    "us_equity": "Action",
-    "crypto": "Crypto",
-    "forex": "Forex",
-}
 
 
 def get_account() -> dict:
@@ -52,11 +45,10 @@ def get_positions() -> list[dict]:
             classe = "Action"
         elif "crypto" in asset_str:
             classe = "Crypto"
+        elif "forex" in asset_str:
+            classe = "Forex"
         else:
-            classe = _ASSET_CLASS_MAP.get(
-                str(p.asset_class).lower().split(".")[-1].replace("_", " ").strip(),
-                "Action",
-            )
+            classe = "Action"
 
         direction = "ACHAT" if "long" in str(p.side).lower() else "VENTE"
         result.append({
@@ -94,6 +86,6 @@ def get_portfolio_history() -> list[dict]:
     for ts, equity in zip(history.timestamp, history.equity):
         if equity is None:
             continue
-        date_str = datetime.fromtimestamp(ts).strftime("%Y-%m-%d")
+        date_str = datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d")
         result.append({"date": date_str, "capital": round(float(equity), 2), "note": None})
     return result

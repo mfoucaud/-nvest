@@ -47,6 +47,7 @@ def test_get_positions_returns_formatted_list():
 
         assert len(result) == 1
         assert result[0]["actif"] == "AAPL"
+        assert result[0]["classe"] == "Action"
         assert result[0]["statut"] == "OUVERT"
         assert result[0]["direction"] == "ACHAT"
         assert result[0]["prix_entree"] == 150.0
@@ -77,3 +78,4 @@ def test_get_portfolio_history_returns_formatted_list():
         assert len(result) == 1
         assert result[0]["capital"] == 10500.0
         assert "date" in result[0]
+        assert result[0]["note"] is None
