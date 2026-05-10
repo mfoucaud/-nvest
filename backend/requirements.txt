@@ -6,6 +6,7 @@ sqlalchemy>=2.0
 alembic
 apscheduler>=3.10
 anthropic>=0.40
+alpaca-py>=0.28
 psycopg2-binary
 pandas
 numpy
